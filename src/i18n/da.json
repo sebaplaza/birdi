@@ -1,0 +1,42 @@
+{
+  "title": "Birdi",
+  "setup": {
+    "player1": "Spiller 1 (Blaa)",
+    "player2": "Spiller 2 (Roed)",
+    "namePlaceholder": "Navn",
+    "bestOf": "Bedst af",
+    "pointsPerSet": "Point pr. saet",
+    "sets1": "1 saet",
+    "sets3": "3 saet",
+    "sets5": "5 saet",
+    "start": "Start kamp",
+    "firstServer": "Første server"
+  },
+  "match": {
+    "srv": "SRV",
+    "vs": "VS",
+    "undo": "Fortryd",
+    "switchSides": "Byt side",
+    "endMatch": "Afslut kamp",
+    "newMatch": "Ny kamp",
+    "wins": "{player} vinder!",
+    "abandonConfirm": "Forlad igangvaerende kamp?",
+    "timerSet": "Sæt",
+    "timerTotal": "Total",
+    "interval": "Pause",
+    "resume": "Genoptag",
+    "timesUp": "Tiden er udløbet!"
+  },
+  "history": {
+    "title": "Kamphistorik",
+    "empty": "Ingen kampe spillet endnu.",
+    "date": "Dato",
+    "players": "Spillere",
+    "score": "Score",
+    "winner": "Vinder",
+    "clear": "Ryd historik",
+    "clearConfirm": "Slet al kamphistorik?",
+    "vs": "mod",
+    "duration": "Varighed"
+  }
+}

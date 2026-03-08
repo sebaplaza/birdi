@@ -1,0 +1,42 @@
+{
+  "title": "Birdi",
+  "setup": {
+    "player1": "खिलाड़ी 1 (नीला)",
+    "player2": "खिलाड़ी 2 (लाल)",
+    "namePlaceholder": "नाम",
+    "bestOf": "कुल सेट",
+    "pointsPerSet": "प्रति सेट अंक",
+    "sets1": "1 सेट",
+    "sets3": "3 सेट",
+    "sets5": "5 सेट",
+    "start": "मैच शुरू करें",
+    "firstServer": "पहला सर्वर"
+  },
+  "match": {
+    "srv": "सर्व",
+    "vs": "VS",
+    "undo": "वापस",
+    "switchSides": "साइड बदलें",
+    "endMatch": "मैच समाप्त",
+    "newMatch": "नया मैच",
+    "wins": "{player} जीता!",
+    "abandonConfirm": "वर्तमान मैच छोड़ें?",
+    "timerSet": "सेट",
+    "timerTotal": "कुल",
+    "interval": "विराम",
+    "resume": "जारी रखें",
+    "timesUp": "समय समाप्त!"
+  },
+  "history": {
+    "title": "मैच इतिहास",
+    "empty": "अभी तक कोई मैच नहीं।",
+    "date": "तारीख",
+    "players": "खिलाड़ी",
+    "score": "स्कोर",
+    "winner": "विजेता",
+    "clear": "इतिहास मिटाएं",
+    "clearConfirm": "सभी मैच इतिहास हटाएं?",
+    "vs": "बनाम",
+    "duration": "अवधि"
+  }
+}

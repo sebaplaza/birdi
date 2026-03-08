@@ -1,0 +1,42 @@
+{
+  "title": "Birdi",
+  "setup": {
+    "player1": "选手 1（蓝色）",
+    "player2": "选手 2（红色）",
+    "namePlaceholder": "姓名",
+    "bestOf": "最多局数",
+    "pointsPerSet": "每局分数",
+    "sets1": "1 局",
+    "sets3": "3 局",
+    "sets5": "5 局",
+    "start": "开始比赛",
+    "firstServer": "先发球"
+  },
+  "match": {
+    "srv": "发球",
+    "vs": "VS",
+    "undo": "撤销",
+    "switchSides": "交换场地",
+    "endMatch": "结束比赛",
+    "newMatch": "新比赛",
+    "wins": "{player} 获胜！",
+    "abandonConfirm": "放弃当前比赛？",
+    "timerSet": "局",
+    "timerTotal": "总计",
+    "interval": "休息",
+    "resume": "继续",
+    "timesUp": "时间到！"
+  },
+  "history": {
+    "title": "比赛历史",
+    "empty": "还没有比赛记录。",
+    "date": "日期",
+    "players": "选手",
+    "score": "比分",
+    "winner": "胜者",
+    "clear": "清除历史",
+    "clearConfirm": "删除所有比赛历史？",
+    "vs": "对",
+    "duration": "时长"
+  }
+}

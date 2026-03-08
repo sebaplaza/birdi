@@ -1,0 +1,42 @@
+{
+  "title": "Birdi",
+  "setup": {
+    "player1": "Pemain 1 (Biru)",
+    "player2": "Pemain 2 (Merah)",
+    "namePlaceholder": "Nama",
+    "bestOf": "Terbaik daripada",
+    "pointsPerSet": "Mata setiap set",
+    "sets1": "1 set",
+    "sets3": "3 set",
+    "sets5": "5 set",
+    "start": "Mula perlawanan",
+    "firstServer": "Pelayan pertama"
+  },
+  "match": {
+    "srv": "SRV",
+    "vs": "VS",
+    "undo": "Batal",
+    "switchSides": "Tukar belah",
+    "endMatch": "Tamat perlawanan",
+    "newMatch": "Perlawanan baru",
+    "wins": "{player} menang!",
+    "abandonConfirm": "Tinggalkan perlawanan semasa?",
+    "timerSet": "Set",
+    "timerTotal": "Jumlah",
+    "interval": "Rehat",
+    "resume": "Sambung",
+    "timesUp": "Masa tamat!"
+  },
+  "history": {
+    "title": "Sejarah Perlawanan",
+    "empty": "Tiada perlawanan lagi.",
+    "date": "Tarikh",
+    "players": "Pemain",
+    "score": "Skor",
+    "winner": "Pemenang",
+    "clear": "Padam sejarah",
+    "clearConfirm": "Padam semua sejarah perlawanan?",
+    "vs": "lawan",
+    "duration": "Tempoh"
+  }
+}

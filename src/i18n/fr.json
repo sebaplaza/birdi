@@ -1,0 +1,42 @@
+{
+  "title": "Birdi",
+  "setup": {
+    "player1": "Joueur 1 (Bleu)",
+    "player2": "Joueur 2 (Rouge)",
+    "namePlaceholder": "Nom",
+    "bestOf": "Au meilleur des",
+    "pointsPerSet": "Points par set",
+    "sets1": "1 set",
+    "sets3": "3 sets",
+    "sets5": "5 sets",
+    "start": "Commencer le match",
+    "firstServer": "Premier serveur"
+  },
+  "match": {
+    "srv": "SRV",
+    "vs": "VS",
+    "undo": "Annuler",
+    "switchSides": "Changer de cote",
+    "endMatch": "Fin du match",
+    "newMatch": "Nouveau match",
+    "wins": "{player} gagne !",
+    "abandonConfirm": "Abandonner le match en cours ?",
+    "timerSet": "Set",
+    "timerTotal": "Total",
+    "interval": "Pause",
+    "resume": "Reprendre",
+    "timesUp": "Temps écoulé !"
+  },
+  "history": {
+    "title": "Historique des matchs",
+    "empty": "Aucun match joue.",
+    "date": "Date",
+    "players": "Joueurs",
+    "score": "Score",
+    "winner": "Vainqueur",
+    "clear": "Effacer l'historique",
+    "clearConfirm": "Supprimer tout l'historique ?",
+    "vs": "contre",
+    "duration": "Durée"
+  }
+}

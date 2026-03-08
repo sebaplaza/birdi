@@ -1,0 +1,42 @@
+{
+  "title": "Birdi",
+  "setup": {
+    "player1": "ผู้เล่น 1 (น้ำเงิน)",
+    "player2": "ผู้เล่น 2 (แดง)",
+    "namePlaceholder": "ชื่อ",
+    "bestOf": "เซ็ตที่ดีที่สุด",
+    "pointsPerSet": "คะแนนต่อเซ็ต",
+    "sets1": "1 เซ็ต",
+    "sets3": "3 เซ็ต",
+    "sets5": "5 เซ็ต",
+    "start": "เริ่มแข่ง",
+    "firstServer": "ผู้เสิร์ฟก่อน"
+  },
+  "match": {
+    "srv": "เสิร์ฟ",
+    "vs": "VS",
+    "undo": "ย้อนกลับ",
+    "switchSides": "สลับข้าง",
+    "endMatch": "จบแข่ง",
+    "newMatch": "แข่งใหม่",
+    "wins": "{player} ชนะ!",
+    "abandonConfirm": "ยกเลิกแข่งปัจจุบัน?",
+    "timerSet": "เซ็ต",
+    "timerTotal": "รวม",
+    "interval": "พักครึ่ง",
+    "resume": "ดำเนินต่อ",
+    "timesUp": "หมดเวลา!"
+  },
+  "history": {
+    "title": "ประวัติการแข่ง",
+    "empty": "ยังไม่มีการแข่งขัน",
+    "date": "วันที่",
+    "players": "ผู้เล่น",
+    "score": "คะแนน",
+    "winner": "ผู้ชนะ",
+    "clear": "ล้างประวัติ",
+    "clearConfirm": "ลบประวัติทั้งหมด?",
+    "vs": "พบ",
+    "duration": "ระยะเวลา"
+  }
+}

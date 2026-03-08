@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Shuttlecock cork (bottom) -->
+  <ellipse cx="256" cy="380" rx="52" ry="40" fill="#d08770"/>
+  <ellipse cx="256" cy="370" rx="48" ry="35" fill="#ebcb8b"/>
+  <ellipse cx="256" cy="362" rx="42" ry="28" fill="#d08770" opacity="0.4"/>
+
+  <!-- Feathers -->
+  <g>
+    <!-- Center feather -->
+    <path d="M256 340 Q256 200 256 100 Q270 200 270 340 Z" fill="#eceff4" stroke="#d8dee9" stroke-width="1"/>
+    <path d="M256 340 Q256 200 256 100 Q242 200 242 340 Z" fill="#e5e9f0" stroke="#d8dee9" stroke-width="1"/>
+
+    <!-- Left feathers -->
+    <path d="M244 342 Q220 210 195 115 Q215 215 238 342 Z" fill="#eceff4" stroke="#d8dee9" stroke-width="1"/>
+    <path d="M244 342 Q218 215 195 115 Q200 220 230 342 Z" fill="#e5e9f0" stroke="#d8dee9" stroke-width="1"/>
+
+    <path d="M232 344 Q185 225 145 140 Q175 235 220 344 Z" fill="#eceff4" stroke="#d8dee9" stroke-width="1"/>
+    <path d="M232 344 Q182 230 145 140 Q165 240 210 344 Z" fill="#e5e9f0" stroke="#d8dee9" stroke-width="1"/>
+
+    <path d="M222 348 Q155 245 105 175 Q145 255 212 348 Z" fill="#eceff4" stroke="#d8dee9" stroke-width="1"/>
+    <path d="M222 348 Q150 250 105 175 Q135 260 202 348 Z" fill="#e5e9f0" stroke="#d8dee9" stroke-width="1"/>
+
+    <!-- Right feathers -->
+    <path d="M268 342 Q292 210 317 115 Q297 215 274 342 Z" fill="#eceff4" stroke="#d8dee9" stroke-width="1"/>
+    <path d="M268 342 Q294 215 317 115 Q312 220 282 342 Z" fill="#e5e9f0" stroke="#d8dee9" stroke-width="1"/>
+
+    <path d="M280 344 Q327 225 367 140 Q337 235 292 344 Z" fill="#eceff4" stroke="#d8dee9" stroke-width="1"/>
+    <path d="M280 344 Q330 230 367 140 Q347 240 302 344 Z" fill="#e5e9f0" stroke="#d8dee9" stroke-width="1"/>
+
+    <path d="M290 348 Q357 245 407 175 Q367 255 300 348 Z" fill="#eceff4" stroke="#d8dee9" stroke-width="1"/>
+    <path d="M290 348 Q362 250 407 175 Q377 260 310 348 Z" fill="#e5e9f0" stroke="#d8dee9" stroke-width="1"/>
+  </g>
+
+  <!-- Feather tips highlight -->
+  <circle cx="256" cy="100" r="4" fill="#88c0d0" opacity="0.6"/>
+  <circle cx="195" cy="115" r="4" fill="#88c0d0" opacity="0.6"/>
+  <circle cx="317" cy="115" r="4" fill="#88c0d0" opacity="0.6"/>
+  <circle cx="145" cy="140" r="4" fill="#88c0d0" opacity="0.6"/>
+  <circle cx="367" cy="140" r="4" fill="#88c0d0" opacity="0.6"/>
+  <circle cx="105" cy="175" r="4" fill="#88c0d0" opacity="0.6"/>
+  <circle cx="407" cy="175" r="4" fill="#88c0d0" opacity="0.6"/>
+
+  <!-- Cork band / seam -->
+  <ellipse cx="256" cy="352" rx="50" ry="8" fill="none" stroke="#bf616a" stroke-width="2.5" opacity="0.6"/>
+
+  <!-- Cork shine -->
+  <ellipse cx="245" cy="372" rx="12" ry="8" fill="white" opacity="0.2"/>
+</svg>

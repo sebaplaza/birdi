@@ -1,0 +1,42 @@
+{
+  "title": "Birdi",
+  "setup": {
+    "player1": "プレイヤー 1（青）",
+    "player2": "プレイヤー 2（赤）",
+    "namePlaceholder": "名前",
+    "bestOf": "セット数",
+    "pointsPerSet": "セットあたりのポイント",
+    "sets1": "1 セット",
+    "sets3": "3 セット",
+    "sets5": "5 セット",
+    "start": "試合開始",
+    "firstServer": "最初のサーバー"
+  },
+  "match": {
+    "srv": "サーブ",
+    "vs": "VS",
+    "undo": "元に戻す",
+    "switchSides": "コート入替",
+    "endMatch": "試合終了",
+    "newMatch": "新しい試合",
+    "wins": "{player} の勝利！",
+    "abandonConfirm": "現在の試合を中断しますか？",
+    "timerSet": "セット",
+    "timerTotal": "合計",
+    "interval": "インターバル",
+    "resume": "再開",
+    "timesUp": "時間切れ！"
+  },
+  "history": {
+    "title": "試合履歴",
+    "empty": "まだ試合がありません。",
+    "date": "日付",
+    "players": "プレイヤー",
+    "score": "スコア",
+    "winner": "勝者",
+    "clear": "履歴を消去",
+    "clearConfirm": "すべての試合履歴を削除しますか？",
+    "vs": "対",
+    "duration": "所要時間"
+  }
+}
