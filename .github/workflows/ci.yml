@@ -13,28 +13,45 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v2
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
         with:
-          node-version: '20'
+          node-version: '16'
 
-      - name: Install dependencies with pnpm
-        uses: pnpm/action-setup@v2
+      - name: Install Dependencies with pnpm
+        run: |
+          npm install -g pnpm
+          pnpm install
+
+      - name: Run OXLint
+        run: |
+          pnpm exec oxlint
+
+      - name: Run Vitest Tests
+        run: |
+          pnpm exec vitest
+
+      - name: Run Playwright E2E Tests
+        run: |
+          pnpm exec playwright test
+
+      - name: Build with Vite
+        run: |
+          pnpm exec vite build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          version: 8
-      - run: pnpm install
+          github_token: \
+            ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
 
-      - name: Run linter
-        run: pnpm lint || true
-
-      - name: Build project
-        run: pnpm build
-
-      - name: Run unit tests
-        run: pnpm test || true
-
-      - name: Run e2e tests
-        run: pnpm test:e2e || true
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          name: Pages Artifact
+          path: dist/
