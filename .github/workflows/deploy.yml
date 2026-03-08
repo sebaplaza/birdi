@@ -22,12 +22,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
         with:
           node-version: 24
-          cache: pnpm
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install
       - run: pnpm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
