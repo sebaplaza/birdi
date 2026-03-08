@@ -15,6 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+<<<<<<< HEAD
   build:
     runs-on: ubuntu-latest
 
@@ -51,14 +52,60 @@ jobs:
         with:
           path: dist
 
+||||||| parent of aae9597 (chore: fix deploy)
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm run lint
+
+      - run: pnpm run test
+
+      - run: pnpm run build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+=======
+>>>>>>> aae9597 (chore: fix deploy)
   deploy:
-    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
+<<<<<<< HEAD
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+||||||| parent of aae9597 (chore: fix deploy)
+      - id: deployment
+        uses: actions/deploy-pages@v4
+=======
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+>>>>>>> aae9597 (chore: fix deploy)
