@@ -26,6 +26,22 @@ export interface Language {
 
 const STORAGE_KEY = "birdi_lang";
 
+function safeGet(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeSet(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Unavailable (e.g. Private Browsing) — preference not persisted.
+  }
+}
+
 /** All loaded locale dictionaries, keyed by language code. */
 const locales: Record<string, LocaleStrings> = {
   en,
@@ -47,7 +63,7 @@ function detectLocale(): string {
 }
 
 /** Reactive current language code (e.g. "en", "fr"). */
-export const lang = signal(localStorage.getItem(STORAGE_KEY) || detectLocale());
+export const lang = signal(safeGet(STORAGE_KEY) || detectLocale());
 
 /** Computed locale dictionary for the current language. */
 const strings = computed(() => locales[lang.value] || locales.en);
@@ -79,7 +95,7 @@ export function getLang(): string {
 export function setLang(code: string): void {
   if (!locales[code]) return;
   lang.value = code;
-  localStorage.setItem(STORAGE_KEY, code);
+  safeSet(STORAGE_KEY, code);
 }
 
 /** All supported languages with display metadata. */

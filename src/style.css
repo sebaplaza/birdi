@@ -127,6 +127,11 @@ h1 {
   color: var(--red);
   font-weight: 700;
 }
+.setup__error {
+  color: var(--red);
+  font-size: 0.85rem;
+  margin: 0.25rem 0 0;
+}
 
 /* Autocomplete */
 .autocomplete {
@@ -525,10 +530,6 @@ h1 {
   gap: 0.35rem;
 }
 
-.actions__btn svg {
-  flex-shrink: 0;
-}
-
 /* History */
 .history {
   margin: 1rem auto 0;
@@ -653,10 +654,6 @@ h1 {
     font-size: 1rem;
     padding: 0.5rem 1.2rem;
   }
-  .actions__btn svg {
-    width: 20px;
-    height: 20px;
-  }
 
   .winner {
     padding: 1rem 2rem;
@@ -722,10 +719,6 @@ h1 {
   .actions__btn {
     font-size: 1.2rem;
     padding: 0.6rem 1.5rem;
-  }
-  .actions__btn svg {
-    width: 24px;
-    height: 24px;
   }
 
   .winner__text {
@@ -807,10 +800,6 @@ h1 {
   .actions__btn {
     font-size: 0.7rem;
     padding: 0.3rem 0.5rem;
-  }
-  .actions__btn svg {
-    width: 14px;
-    height: 14px;
   }
 
   .history__table {

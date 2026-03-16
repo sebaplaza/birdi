@@ -10,7 +10,8 @@
     "sets3": "3 セット",
     "sets5": "5 セット",
     "start": "試合開始",
-    "firstServer": "最初のサーバー"
+    "firstServer": "最初のサーバー",
+    "sameName": "選手の名前は異なる必要があります"
   },
   "match": {
     "srv": "サーブ",

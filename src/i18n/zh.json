@@ -10,7 +10,8 @@
     "sets3": "3 局",
     "sets5": "5 局",
     "start": "开始比赛",
-    "firstServer": "先发球"
+    "firstServer": "先发球",
+    "sameName": "两位选手的名字必须不同"
   },
   "match": {
     "srv": "发球",

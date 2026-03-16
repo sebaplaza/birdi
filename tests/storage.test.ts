@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from "vitest";
-import "fake-indexeddb/auto";
 import {
   initStorage,
   closeStorage,
@@ -15,11 +14,7 @@ import type { HistoryEntry, MatchState } from "../src/lib/match.js";
 
 beforeEach(async () => {
   closeStorage();
-  await new Promise<void>((resolve, reject) => {
-    const req = indexedDB.deleteDatabase("birdi");
-    req.onsuccess = () => resolve();
-    req.onerror = () => reject(req.error);
-  });
+  localStorage.clear();
   await initStorage();
 });
 

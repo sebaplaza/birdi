@@ -2,6 +2,7 @@
  * Application entry point.
  * Initializes IndexedDB storage, applies the saved theme, and mounts the app.
  */
+import "@picocss/pico/css/pico.min.css";
 import "./style.css";
 import { initStorage } from "./lib/storage.js";
 import { applyTheme } from "./lib/themes.js";

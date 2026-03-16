@@ -10,7 +10,8 @@
     "sets3": "3 saet",
     "sets5": "5 saet",
     "start": "Start kamp",
-    "firstServer": "Første server"
+    "firstServer": "Første server",
+    "sameName": "Spillerne skal have forskellige navne"
   },
   "match": {
     "srv": "SRV",

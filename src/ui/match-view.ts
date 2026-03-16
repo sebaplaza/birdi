@@ -12,19 +12,21 @@ import { t } from "../lib/i18n.js";
 import { formatMs } from "../lib/utils.js";
 import { state, currentMatch, setTime, totalTime, breakSeconds, send } from "../state.js";
 
-// ── Inline SVG icons ──
+// ── Inline SVG shuttlecock (serve indicator) ──
 
 const SHUTTLECOCK = `<svg class="shuttlecock-icon" viewBox="0 0 100 120"><ellipse cx="50" cy="105" rx="18" ry="14" fill="currentColor" opacity=".7"/><ellipse cx="50" cy="98" rx="16" ry="11" fill="currentColor" opacity=".5"/><path d="M50 90Q50 55 50 25Q56 55 56 90Z" fill="currentColor" opacity=".9"/><path d="M50 90Q50 55 50 25Q44 55 44 90Z" fill="currentColor" opacity=".7"/><path d="M44 91Q30 58 20 32Q32 60 40 91Z" fill="currentColor" opacity=".9"/><path d="M44 91Q28 60 20 32Q26 63 38 91Z" fill="currentColor" opacity=".7"/><path d="M56 91Q70 58 80 32Q68 60 60 91Z" fill="currentColor" opacity=".9"/><path d="M56 91Q72 60 80 32Q74 63 62 91Z" fill="currentColor" opacity=".7"/><path d="M38 93Q18 65 5 48Q15 68 34 93Z" fill="currentColor" opacity=".9"/><path d="M62 93Q82 65 95 48Q85 68 66 93Z" fill="currentColor" opacity=".7"/></svg>`;
 
-const ICON_UNDO = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>`;
-const ICON_SWITCH = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`;
-const ICON_END = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>`;
-const ICON_NEW = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+// ── Action button emoji icons ──
+
+const ICON_UNDO = "↩️";
+const ICON_SWITCH = "🔄";
+const ICON_END = "🏁";
+const ICON_NEW = "✨";
 
 /**
- * Creates a button with an SVG icon and a reactive text label.
+ * Creates a button with an emoji icon and a reactive text label.
  * @param cls - CSS class string.
- * @param icon - SVG markup for the icon.
+ * @param icon - Emoji string for the icon.
  * @param labelFn - Function returning the translated label text.
  * @param onclick - Click handler.
  */
@@ -35,10 +37,10 @@ function createActionBtn(
   onclick: () => void,
 ): HTMLElement {
   const btn = h("button", { class: cls, type: "button", onclick });
-  const span = h("span");
-  bindText(span, labelFn);
-  btn.innerHTML = icon;
-  btn.append(span);
+  const iconSpan = h("span", { "aria-hidden": "true" }, icon);
+  const labelSpan = h("span");
+  bindText(labelSpan, labelFn);
+  btn.append(iconSpan, labelSpan);
   return btn;
 }
 
@@ -277,7 +279,7 @@ export function createMatchView(): HTMLElement {
     type: "button",
     onclick: () => send({ type: "RESUME" }),
   });
-  bindText(breakBtn, () => t("match.resume"));
+  bindText(breakBtn, () => `▶️ ${t("match.resume")}`);
 
   const breakOverlay = h(
     "div",

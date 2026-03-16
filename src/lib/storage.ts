@@ -1,23 +1,19 @@
 /**
- * IndexedDB persistence layer with synchronous in-memory cache.
+ * localStorage persistence layer with synchronous in-memory cache.
  *
- * On startup, `initStorage()` loads all data from IndexedDB into a cache.
- * After that, reads are synchronous (from cache) and writes update both
- * the cache and IndexedDB (fire-and-forget).
+ * On startup, `initStorage()` loads all data from localStorage into a cache.
+ * After that, reads and writes are synchronous (from/to cache and localStorage).
  *
- * The database has a single "kv" object store used as a key-value map.
+ * Falls back to in-memory-only storage if localStorage is unavailable
+ * (e.g. Private Browsing on some browsers).
  */
 import type { MatchState, HistoryEntry } from "./match.js";
 
-const DB_NAME = "birdi";
-const DB_VERSION = 1;
-const STORE_NAME = "kv";
-
-/** Keys used in the key-value store. */
+/** Keys used in localStorage. */
 const KEYS = {
-  players: "players",
-  history: "history",
-  match: "current_match",
+  players: "birdi_players",
+  history: "birdi_history",
+  match: "birdi_match",
 } as const;
 
 /** In-memory cache, populated by `initStorage()`. */
@@ -27,85 +23,54 @@ const cache = {
   match: null as MatchState | null,
 };
 
-/** Shared database connection (opened once). */
-let db: IDBDatabase | null = null;
-
 /**
- * Opens (or creates) the IndexedDB database.
- * @returns A promise resolving to the database connection.
+ * Safely reads a value from localStorage.
+ * Returns null if localStorage is unavailable or the key does not exist.
  */
-function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = () => {
-      req.result.createObjectStore(STORE_NAME);
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-/**
- * Reads a value from the "kv" store.
- * @param key - The key to look up.
- * @returns The stored value, or null if not found.
- */
-function idbGet<T>(key: string): Promise<T | null> {
-  return new Promise((resolve, reject) => {
-    if (!db) return resolve(null);
-    const tx = db.transaction(STORE_NAME, "readonly");
-    const req = tx.objectStore(STORE_NAME).get(key);
-    req.onsuccess = () => resolve((req.result as T) ?? null);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-/**
- * Writes a value to the "kv" store (or deletes the key if value is null).
- * Fire-and-forget — errors are logged but don't propagate.
- * @param key - The key to write.
- * @param value - The value to store, or null to delete.
- */
-function idbPut(key: string, value: unknown): void {
-  if (!db) return;
-  const tx = db.transaction(STORE_NAME, "readwrite");
-  const store = tx.objectStore(STORE_NAME);
-  if (value === null) {
-    store.delete(key);
-  } else {
-    store.put(value, key);
+function lsGet<T>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return null;
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
   }
-  tx.onerror = () => console.error("IndexedDB write failed:", tx.error);
 }
 
 /**
- * Closes the current database connection (if any).
- * Exposed for test cleanup.
+ * Safely writes a value to localStorage.
+ * Silently does nothing if localStorage is unavailable.
+ * Pass null to remove the key.
+ */
+function lsSet(key: string, value: unknown): void {
+  try {
+    if (value === null) {
+      localStorage.removeItem(key);
+    } else {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+  } catch {
+    // Quota exceeded or storage unavailable — in-memory cache remains valid.
+  }
+}
+
+/**
+ * Closes the current storage connection (no-op for localStorage).
+ * Kept for test compatibility.
  */
 export function closeStorage(): void {
-  if (db) {
-    db.close();
-    db = null;
-  }
+  // No-op: localStorage has no connection to close.
 }
 
 /**
  * Initializes the storage layer. Must be called (and awaited) before
- * any other storage function.
+ * any other storage function. Returns immediately — kept async for
+ * call-site compatibility.
  */
 export async function initStorage(): Promise<void> {
-  closeStorage();
-  db = await openDB();
-
-  const [players, history, match] = await Promise.all([
-    idbGet<string[]>(KEYS.players),
-    idbGet<HistoryEntry[]>(KEYS.history),
-    idbGet<MatchState>(KEYS.match),
-  ]);
-
-  cache.players = players ?? [];
-  cache.history = history ?? [];
-  cache.match = match ?? null;
+  cache.players = lsGet<string[]>(KEYS.players) ?? [];
+  cache.history = lsGet<HistoryEntry[]>(KEYS.history) ?? [];
+  cache.match = lsGet<MatchState>(KEYS.match) ?? null;
 }
 
 // ── Public API (synchronous, reads from cache) ──
@@ -119,7 +84,7 @@ export function loadPlayers(): string[] {
 export function savePlayer(name: string): void {
   if (cache.players.includes(name)) return;
   cache.players = [...new Set([...cache.players, name])];
-  idbPut(KEYS.players, cache.players);
+  lsSet(KEYS.players, cache.players);
 }
 
 /** Returns all saved match history entries. */
@@ -130,7 +95,7 @@ export function loadHistory(): HistoryEntry[] {
 /** Overwrites the entire history array. */
 export function saveHistory(history: HistoryEntry[]): void {
   cache.history = history;
-  idbPut(KEYS.history, history);
+  lsSet(KEYS.history, history);
 }
 
 /** Returns the in-progress match state, or null if none. */
@@ -141,5 +106,5 @@ export function loadMatch(): MatchState | null {
 /** Saves the current match state. Pass null to clear. */
 export function saveMatch(match: MatchState | null): void {
   cache.match = match;
-  idbPut(KEYS.match, match);
+  lsSet(KEYS.match, match);
 }

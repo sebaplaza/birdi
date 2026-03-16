@@ -24,7 +24,7 @@ export function createHistory(): HTMLElement {
     type: "button",
     onclick: () => send({ type: "CLEAR_HISTORY" }),
   });
-  bindText(clearBtn, () => t("history.clear"));
+  bindText(clearBtn, () => `🗑️ ${t("history.clear")}`);
 
   const table = h("table", { class: "history__table" }, thead, tbody);
 

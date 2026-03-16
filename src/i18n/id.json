@@ -10,7 +10,8 @@
     "sets3": "3 set",
     "sets5": "5 set",
     "start": "Mulai pertandingan",
-    "firstServer": "Server pertama"
+    "firstServer": "Server pertama",
+    "sameName": "Nama pemain harus berbeda"
   },
   "match": {
     "srv": "SRV",

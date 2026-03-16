@@ -28,6 +28,22 @@ export interface Theme {
 
 const STORAGE_KEY = "birdi_theme";
 
+function safeGet(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeSet(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Unavailable (e.g. Private Browsing) — preference not persisted.
+  }
+}
+
 /** All available themes. */
 export const THEMES: Theme[] = [
   {
@@ -313,7 +329,7 @@ export const THEMES: Theme[] = [
 ];
 
 /** Reactive current theme ID. */
-export const themeId = signal(localStorage.getItem(STORAGE_KEY) || "nord");
+export const themeId = signal(safeGet(STORAGE_KEY) || "nord");
 
 /** Computed current theme object (falls back to the first theme). */
 export const currentTheme = computed(() => THEMES.find((t) => t.id === themeId.value) || THEMES[0]);
@@ -336,7 +352,7 @@ export function setTheme(id: string): void {
   const theme = THEMES.find((t) => t.id === id);
   if (!theme) return;
   themeId.value = id;
-  localStorage.setItem(STORAGE_KEY, id);
+  safeSet(STORAGE_KEY, id);
   applyTheme();
 }
 

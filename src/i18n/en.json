@@ -10,7 +10,8 @@
     "sets3": "3 sets",
     "sets5": "5 sets",
     "start": "Start Match",
-    "firstServer": "First server"
+    "firstServer": "First server",
+    "sameName": "Players must have different names"
   },
   "match": {
     "srv": "SRV",

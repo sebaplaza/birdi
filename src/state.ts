@@ -28,7 +28,11 @@ export type GameState =
   | { type: "break"; match: Match; duration: number }
   | { type: "finished"; match: Match };
 
-/** Full break state with timestamp, used only in the root FSM. */
+/**
+ * Full break state stored in the root FSM.
+ * Extends GameState's break with a wall-clock timestamp so elapsed pause
+ * time can be subtracted from `setStartedAt` when play resumes.
+ */
 type BreakState = { type: "break"; match: Match; duration: number; breakStartedAt: number };
 
 /** Events accepted by the game sub-FSM. */
@@ -62,7 +66,11 @@ export type AppEvent =
 
 // ── State ──
 
-/** Restores the app state from storage on startup. */
+/**
+ * Derives the initial app state from persisted storage on startup.
+ * If an in-progress match exists, resumes it in the appropriate state.
+ * Otherwise returns the setup state.
+ */
 function initState(): AppState {
   const saved = loadMatch();
   if (saved) {
@@ -75,7 +83,7 @@ function initState(): AppState {
 /** The single source of truth for the entire app. */
 export const state = signal<AppState>({ type: "setup" });
 
-/** Past match results. */
+/** Past match results, shown in the history panel. */
 export const history = signal<HistoryEntry[]>([]);
 
 /** Re-initializes state and history from storage. Call after `initStorage()` completes. */
@@ -84,10 +92,10 @@ export function restoreState(): void {
   history.value = loadHistory();
 }
 
-/** Incremented every second during play for timer reactivity. */
+/** Incremented every second while a match is in progress, driving timer reactivity. */
 export const tick = signal(0);
 
-/** Countdown seconds remaining during a break. */
+/** Countdown seconds remaining during a break (interval or inter-set). */
 export const breakSeconds = signal(60);
 
 // ── Derived signals ──
@@ -98,18 +106,18 @@ export const currentMatch = computed((): Match | null => {
   return s.type === "setup" ? null : s.match;
 });
 
-/** Formatted current set elapsed time (e.g. "02:35"). */
+/** Formatted elapsed time for the current set (e.g. "02:35"). Frozen when finished. */
 export const setTime = computed(() => {
-  void tick.value;
+  void tick.value; // subscribe to tick so this recomputes every second
   const m = currentMatch.value;
   if (!m) return "00:00";
   if (m.finished) return formatMs(m.setTimes[m.setTimes.length - 1] || 0);
   return formatMs(m.currentSetElapsed);
 });
 
-/** Formatted total match elapsed time. */
+/** Formatted total match elapsed time. Frozen when finished. */
 export const totalTime = computed(() => {
-  void tick.value;
+  void tick.value; // subscribe to tick so this recomputes every second
   const m = currentMatch.value;
   if (!m) return "00:00";
   if (m.finished) return formatMs(m.matchTime);
@@ -120,6 +128,7 @@ export const totalTime = computed(() => {
 
 let timerInterval: ReturnType<typeof setInterval> | null = null;
 
+/** Starts the per-second tick timer. Stops any existing timer first. */
 function startTimer() {
   stopTimer();
   timerInterval = setInterval(() => {
@@ -127,6 +136,7 @@ function startTimer() {
   }, 1000);
 }
 
+/** Clears the per-second tick timer. */
 function stopTimer() {
   if (timerInterval) {
     clearInterval(timerInterval);
@@ -134,16 +144,19 @@ function stopTimer() {
   }
 }
 
-// Auto-start/stop the tick timer (paused during breaks)
+// Tick timer runs only while actively playing (paused during breaks and after finish).
 effect(() => {
   const s = state.value;
   if (s.type === "playing") startTimer();
   else stopTimer();
 });
 
-// Manage the break countdown timer
+// ── Break countdown ──
+
 let breakInterval: ReturnType<typeof setInterval> | null = null;
 
+// Starts a countdown timer whenever the state enters a break,
+// and clears it when leaving (resumed or abandoned).
 effect(() => {
   const s = state.value;
   if (s.type === "break") {
@@ -166,13 +179,20 @@ effect(() => {
 
 // ── Helpers ──
 
-/** Saves the finished match to history and clears the active match. */
+/**
+ * Appends the finished match to history, clears the active match from storage,
+ * and updates the history signal with a new array reference.
+ *
+ * A new array reference is required because @preact/signals-core uses strict
+ * equality (===) to detect signal changes — mutating the existing array in place
+ * would be a no-op and effects reading `history.value` would not re-run.
+ */
 function doSaveHistory(m: Match): void {
   const h = loadHistory();
   h.unshift(m.toHistoryEntry());
   saveHistory(h);
   saveMatch(null);
-  history.value = loadHistory();
+  history.value = h.slice(); // new reference so signal triggers its subscribers
 }
 
 // ── Event dispatcher ──
@@ -187,7 +207,7 @@ export function send(event: AppEvent): void {
     const h = loadHistory();
     h.splice(event.index, 1);
     saveHistory(h);
-    history.value = loadHistory();
+    history.value = h.slice(); // new reference so signal triggers its subscribers
     return;
   }
   if (event.type === "CLEAR_HISTORY") {
@@ -216,19 +236,24 @@ export function send(event: AppEvent): void {
   if (!result) return;
 
   if ("exit" in result) {
+    // NEW_MATCH from playing: confirm before discarding the active match
     if (result.confirm && !confirm(t("match.abandonConfirm"))) return;
     saveMatch(null);
     state.value = { type: "setup" };
   } else if ("save" in result) {
+    // END_MATCH: save to history then return to setup
     stopTimer();
     doSaveHistory(result.save);
-    state.value = { type: "finished", match: result.save };
+    state.value = { type: "setup" };
   } else {
     const next = result.transition;
     if (next.type === "finished") {
+      // Match ended naturally (set won) — stop timer, stay on finished screen
+      // until the user explicitly clicks "End Match" to save to history.
       stopTimer();
     }
     if (next.type === "break") {
+      // Record wall-clock time so pause duration can be excluded from set timers.
       state.value = { ...next, breakStartedAt: Date.now() };
     } else {
       state.value = next;

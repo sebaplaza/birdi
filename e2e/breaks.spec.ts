@@ -40,7 +40,6 @@ test.describe("Break at 11 points", () => {
     await page.goto("/");
     await page.evaluate(() => {
       localStorage.clear();
-      indexedDB.deleteDatabase("birdi");
     });
     await page.reload();
   });
@@ -125,7 +124,6 @@ test.describe("Break between sets (2 minutes)", () => {
     await page.goto("/");
     await page.evaluate(() => {
       localStorage.clear();
-      indexedDB.deleteDatabase("birdi");
     });
     await page.reload();
   });

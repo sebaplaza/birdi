@@ -5,9 +5,40 @@ test.describe("Score tracking", () => {
     await page.goto("/");
     await page.evaluate(() => {
       localStorage.clear();
-      indexedDB.deleteDatabase("birdi");
     });
     await page.reload();
+  });
+
+  test("cannot start a match with the same name for both players", async ({ page }) => {
+    await page.fill("#player1", "Alice");
+    await page.fill("#player2", "Alice");
+
+    // Error message should be visible
+    await expect(page.locator(".setup__error")).toBeVisible();
+
+    // Submit should not start the match
+    await page.click('button[type="submit"]');
+    await expect(page.locator(".setup")).toBeVisible();
+    await expect(page.locator(".scoreboard")).not.toBeVisible();
+  });
+
+  test("same-name check is case-insensitive", async ({ page }) => {
+    await page.fill("#player1", "alice");
+    await page.fill("#player2", "ALICE");
+
+    await expect(page.locator(".setup__error")).toBeVisible();
+
+    await page.click('button[type="submit"]');
+    await expect(page.locator(".scoreboard")).not.toBeVisible();
+  });
+
+  test("error disappears when names become different", async ({ page }) => {
+    await page.fill("#player1", "Alice");
+    await page.fill("#player2", "Alice");
+    await expect(page.locator(".setup__error")).toBeVisible();
+
+    await page.fill("#player2", "Bob");
+    await expect(page.locator(".setup__error")).not.toBeVisible();
   });
 
   test("setup form is visible on load", async ({ page }) => {
@@ -104,25 +135,83 @@ test.describe("Score tracking", () => {
 
     await expect(page.locator(".scoreboard__score").first()).toHaveText("2");
 
-    // Wait for the fire-and-forget IndexedDB write to be readable
-    await page.waitForFunction(
-      () =>
-        new Promise((resolve) => {
-          const req = indexedDB.open("birdi", 1);
-          req.onsuccess = () => {
-            const db = req.result;
-            const tx = db.transaction("kv", "readonly");
-            const get = tx.objectStore("kv").get("current_match");
-            get.onsuccess = () => {
-              db.close();
-              resolve(!!get.result);
-            };
-          };
-        }),
-    );
+    // localStorage writes are synchronous, so we can reload immediately
     await page.reload();
 
     await expect(page.locator(".scoreboard")).toBeVisible();
     await expect(page.locator(".scoreboard__score").first()).toHaveText("2");
+  });
+});
+
+test.describe("Autocomplete exclusion", () => {
+  // Seed two saved player names before each test so the autocomplete has entries to show.
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem("birdi_players", JSON.stringify(["John", "Jane"]));
+    });
+    await page.reload();
+  });
+
+  test("player 1's name is excluded from player 2 suggestions", async ({ page }) => {
+    // Select John as player 1
+    await page.fill("#player1", "John");
+    await page.dispatchEvent("#player1", "input");
+
+    // Focus player 2 — John should not appear in suggestions
+    await page.focus("#player2");
+    await page.dispatchEvent("#player2", "focus");
+
+    const list = page
+      .locator("#player2 ~ .autocomplete__list, #player2 + * .autocomplete__list")
+      .first();
+    // Use a broader selector: find the autocomplete list near player2
+    const p2List = page.locator(".autocomplete").nth(1).locator(".autocomplete__list");
+    await expect(p2List.locator(".autocomplete__item", { hasText: "John" })).not.toBeVisible();
+    await expect(p2List.locator(".autocomplete__item", { hasText: "Jane" })).toBeVisible();
+  });
+
+  test("player 2's name is excluded from player 1 suggestions", async ({ page }) => {
+    // Select Jane as player 2
+    await page.fill("#player2", "Jane");
+    await page.dispatchEvent("#player2", "input");
+
+    // Focus player 1 — Jane should not appear in suggestions
+    await page.focus("#player1");
+    await page.dispatchEvent("#player1", "focus");
+
+    const p1List = page.locator(".autocomplete").nth(0).locator(".autocomplete__list");
+    await expect(p1List.locator(".autocomplete__item", { hasText: "Jane" })).not.toBeVisible();
+    await expect(p1List.locator(".autocomplete__item", { hasText: "John" })).toBeVisible();
+  });
+
+  test("exclusion is case-insensitive", async ({ page }) => {
+    await page.fill("#player1", "john");
+    await page.dispatchEvent("#player1", "input");
+
+    await page.focus("#player2");
+    await page.dispatchEvent("#player2", "focus");
+
+    const p2List = page.locator(".autocomplete").nth(1).locator(".autocomplete__list");
+    await expect(p2List.locator(".autocomplete__item", { hasText: "John" })).not.toBeVisible();
+  });
+
+  test("excluded name reappears when player 1 is cleared", async ({ page }) => {
+    await page.fill("#player1", "John");
+    await page.dispatchEvent("#player1", "input");
+
+    // John is excluded from player 2
+    await page.focus("#player2");
+    await page.dispatchEvent("#player2", "focus");
+    const p2List = page.locator(".autocomplete").nth(1).locator(".autocomplete__list");
+    await expect(p2List.locator(".autocomplete__item", { hasText: "John" })).not.toBeVisible();
+
+    // Clear player 1 — John should reappear in player 2's list
+    await page.fill("#player1", "");
+    await page.dispatchEvent("#player1", "input");
+    await page.focus("#player2");
+    await page.dispatchEvent("#player2", "focus");
+    await expect(p2List.locator(".autocomplete__item", { hasText: "John" })).toBeVisible();
   });
 });

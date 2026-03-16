@@ -11,15 +11,22 @@ import { send } from "../state.js";
 
 /**
  * Creates a text input with dropdown autocomplete for player names.
+ * Suggestions exclude the name currently chosen by the other player,
+ * and update reactively when that other name changes.
+ *
  * @param inputId - HTML id for the input element.
  * @param required - Whether the input is required for form submission.
+ * @param exclude - Signal holding the other player's current name to exclude from suggestions.
  * @returns The wrapper element and a signal holding the current name value.
  */
 function createAutocomplete(
   inputId: string,
   required: boolean,
+  exclude: Signal<string>,
 ): { el: HTMLElement; name: Signal<string> } {
   const name = signal("");
+  // Lowercased current input value, updated by event listeners and read by the reactive effect below.
+  const query = signal("");
   const items = signal<string[]>([]);
   const showList = signal(false);
   const selectedIdx = signal(-1);
@@ -34,30 +41,43 @@ function createAutocomplete(
     input.placeholder = t("setup.namePlaceholder");
   });
 
-  // Filter saved players as user types
+  // Recompute the suggestion list whenever the query or the excluded name changes.
+  // Reading exclude.value here means the list updates immediately when the other
+  // player's name is set, without any additional event wiring.
+  effect(() => {
+    const q = query.value;
+    const ex = exclude.value.trim().toLowerCase();
+    const filtered = loadPlayers().filter((p) => {
+      const pl = p.toLowerCase();
+      return pl.includes(q) && pl !== ex;
+    });
+    items.value = filtered;
+    // Collapse the dropdown if it becomes empty after exclusion
+    if (showList.value && filtered.length === 0) showList.value = false;
+  });
+
+  // Update query on keystroke; visibility and index managed separately
   input.addEventListener("input", () => {
     name.value = input.value;
-    const val = input.value.toLowerCase().trim();
-    items.value = loadPlayers().filter((p) => p.toLowerCase().includes(val));
+    query.value = input.value.toLowerCase().trim();
     showList.value = items.value.length > 0;
     selectedIdx.value = -1;
   });
 
   // Show suggestions on focus
   input.addEventListener("focus", () => {
-    const val = input.value.toLowerCase().trim();
-    items.value = loadPlayers().filter((p) => p.toLowerCase().includes(val));
+    query.value = input.value.toLowerCase().trim();
     showList.value = items.value.length > 0;
   });
 
-  // Hide suggestions on blur (with delay for click events)
+  // Hide suggestions on blur (with delay to allow click events to fire first)
   input.addEventListener("blur", () => {
     setTimeout(() => {
       showList.value = false;
     }, 150);
   });
 
-  /** Picks an autocomplete suggestion. */
+  /** Picks an autocomplete suggestion and closes the dropdown. */
   function select(item: string) {
     name.value = item;
     input.value = item;
@@ -113,8 +133,21 @@ function createAutocomplete(
 
 /** Creates the full setup form with player names, match format, and start button. */
 export function createSetup(): HTMLElement {
-  const p1 = createAutocomplete("player1", true);
-  const p2 = createAutocomplete("player2", true);
+  // Placeholder signals hold the other player's name for cross-exclusion.
+  // They are synced to p1.name / p2.name via effects after both autocompletes are created.
+  const excludeForP1 = signal("");
+  const excludeForP2 = signal("");
+
+  const p1 = createAutocomplete("player1", true, excludeForP1);
+  const p2 = createAutocomplete("player2", true, excludeForP2);
+
+  // Keep each exclude signal in sync with the opposite player's chosen name.
+  effect(() => {
+    excludeForP1.value = p2.name.value;
+  });
+  effect(() => {
+    excludeForP2.value = p1.name.value;
+  });
 
   // Labels (reactive for language changes)
   const label1 = h("label", { for: "player1", class: "setup__label--blue" });
@@ -161,8 +194,17 @@ export function createSetup(): HTMLElement {
   });
   const fsSelect = h("select", { id: "first-server" }, fsOpt0, fsOpt1);
 
+  // Error shown when both players share the same name (case-insensitive)
+  const sameNameError = h("p", { class: "setup__error" });
+  bindText(sameNameError, () => t("setup.sameName"));
+  effect(() => {
+    const n1 = p1.name.value.trim().toLowerCase();
+    const n2 = p2.name.value.trim().toLowerCase();
+    sameNameError.style.display = n1 && n2 && n1 === n2 ? "" : "none";
+  });
+
   const submitBtn = h("button", { type: "submit" });
-  bindText(submitBtn, () => t("setup.start"));
+  bindText(submitBtn, () => `🏸 ${t("setup.start")}`);
 
   const form = h(
     "form",
@@ -173,6 +215,7 @@ export function createSetup(): HTMLElement {
       h("div", null, label1, p1.el),
       h("div", null, label2, p2.el),
     ),
+    sameNameError,
     h(
       "fieldset",
       { class: "setup__fieldset" },
@@ -189,6 +232,7 @@ export function createSetup(): HTMLElement {
     const name1 = p1.name.value.trim();
     const name2 = p2.name.value.trim();
     if (!name1 || !name2) return;
+    if (name1.toLowerCase() === name2.toLowerCase()) return;
     send({
       type: "START_MATCH",
       players: [name1, name2],
