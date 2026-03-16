@@ -25,19 +25,18 @@
     "node": ">=24",
     "pnpm": ">=10"
   },
-  "packageManager": "pnpm@9.15.3",
+  "packageManager": "pnpm@10.32.1",
   "devDependencies": {
     "@picocss/pico": "^2.1.1",
     "@playwright/test": "^1.58.2",
-    "@vitest/coverage-v8": "^4.1.0",
-    "fake-indexeddb": "^6.2.5",
+    "@vitest/coverage-v8": "^4.1.0",    
     "husky": "^9.1.7",
-    "jsdom": "^28.1.0",
-    "lint-staged": "^16.3.2",
-    "oxfmt": "^0.36.0",
-    "oxlint": "^1.51.0",
+    "jsdom": "^29.0.0",
+    "lint-staged": "^16.4.0",
+    "oxfmt": "^0.40.0",
+    "oxlint": "^1.55.0",
     "typescript": "^5.9.3",
-    "vite": "^7.3.1",
+    "vite": "^8.0.0",
     "vitest": "^4.1.0"
   },
   "lint-staged": {
