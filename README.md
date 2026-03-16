@@ -4,7 +4,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff)
 ![License](https://img.shields.io/badge/license-ISC-green)
-[![codecov](https://codecov.io/gh/sebaplaza/birdi/graph/badge.svg)](https://codecov.io/gh/sebaplaza/birdi)
+[![codecov](https://codecov.io/gh/sebaplaza/birdi/graph/badge.svg?branch=master)](https://codecov.io/gh/sebaplaza/birdi)
 
 A lightweight, offline-first web app for tracking badminton matches in real time.
 
