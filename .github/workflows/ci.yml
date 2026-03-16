@@ -1,5 +1,7 @@
 name: CI
 
+# Run on every push and pull request targeting master.
+# The two jobs run in parallel so unit and e2e failures are reported independently.
 on:
   push:
     branches: [master]
@@ -7,33 +9,61 @@ on:
     branches: [master]
 
 jobs:
+  # ── Unit tests ────────────────────────────────────────────────────────────────
+  # Runs Vitest with V8 coverage and uploads the lcov report to Codecov.
   unit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # Install pnpm before setup-node so the cache key is available.
       - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - uses: actions/setup-node@v4
         with:
+          node-version: 22
           cache: pnpm
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
       - name: Run unit tests with coverage
         run: pnpm test:coverage
+
+      # lcov.info is written to coverage/ by @vitest/coverage-v8.
+      # No CODECOV_TOKEN needed for public repositories.
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           files: coverage/lcov.info
+
+  # ── End-to-end tests ──────────────────────────────────────────────────────────
+  # Builds the production bundle, serves it with vite preview, then runs
+  # Playwright against it — matching exactly what gets deployed to GitHub Pages.
   e2e:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - uses: actions/setup-node@v4
         with:
+          node-version: 22
           cache: pnpm
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # Only Chromium is installed to keep the job fast.
+      # --with-deps also installs required OS-level libraries (libnss, libgbm, etc.).
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
+
+      # pnpm test:e2e runs `pnpm build` first, then launches Playwright.
       - name: Run e2e tests
         run: pnpm test:e2e
