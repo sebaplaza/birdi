@@ -262,24 +262,44 @@ function renderShuttlecock(C: CourtColors, from: Box): string {
 
 /** Clickable score display areas (left and right) with tap-to-score animation. */
 function renderScores(C: CourtColors, match: Match, L: number, R: number, dim: Dimensions): string {
-  const { midX, cy, sTop, sH, leftShort, rightShort } = dim;
-  const leftCx = (midX + leftShort) / 2;
-  const rightCx = (midX + rightShort) / 2;
+  const { cw, midX, cy, sTop, sH } = dim;
+
+  // Dead zone on each side of the net — clicks here score for nobody.
+  // 60px each side gives a 120px total gap: wide enough that 2-digit scores
+  // (e.g. 29-29 at deuce) never trespass into the opposite half.
+  const netGap = 60;
+
+  // Center scores in the full outer half (PADDING↔midX-netGap and midX+netGap↔PADDING+cw)
+  // so they sit well away from the net regardless of how many digits are showing.
+  const scoreLx = (PADDING + midX - netGap) / 2;
+  const scoreRx = (midX + netGap + PADDING + cw) / 2;
+
+  // Shared text attributes to avoid repetition across the two score groups.
+  const scoreTextAttrs = `text-anchor="middle" font-size="72" font-weight="900" font-family="system-ui, sans-serif" style="pointer-events:none"`;
+
   return `
     <g class="court__score-btn" data-player="${L}" style="cursor:pointer">
-      <rect x="${leftShort}" y="${sTop}" width="${midX - leftShort}" height="${sH}" fill="transparent"/>
-      <text x="${leftCx}" y="${cy + 16}" text-anchor="middle" font-size="42" font-weight="900" fill="${C.blueDark}" font-family="system-ui, sans-serif" style="pointer-events:none">
+      <rect x="${PADDING}" y="${sTop}" width="${midX - PADDING - netGap}" height="${sH}" fill="transparent"/>
+      <text ${scoreTextAttrs} x="${scoreLx}" y="${cy + 20}" stroke="rgba(0,0,0,0.45)" stroke-width="10" stroke-linejoin="round" fill="none" paint-order="stroke">
         ${match.scores[L]}
-        <animate attributeName="font-size" values="42;56;42" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
-        <animate attributeName="opacity" values="1;0.6;1" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
+        <animate attributeName="font-size" values="72;90;72" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
+      </text>
+      <text ${scoreTextAttrs} x="${scoreLx}" y="${cy + 20}" fill="${C.scoreText}" stroke="rgba(0,0,0,0.3)" stroke-width="4" stroke-linejoin="round" paint-order="stroke fill">
+        ${match.scores[L]}
+        <animate attributeName="font-size" values="72;90;72" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
+        <animate attributeName="opacity" values="1;0.7;1" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
       </text>
     </g>
     <g class="court__score-btn" data-player="${R}" style="cursor:pointer">
-      <rect x="${midX}" y="${sTop}" width="${rightShort - midX}" height="${sH}" fill="transparent"/>
-      <text x="${rightCx}" y="${cy + 16}" text-anchor="middle" font-size="42" font-weight="900" fill="${C.redDark}" font-family="system-ui, sans-serif" style="pointer-events:none">
+      <rect x="${midX + netGap}" y="${sTop}" width="${PADDING + cw - midX - netGap}" height="${sH}" fill="transparent"/>
+      <text ${scoreTextAttrs} x="${scoreRx}" y="${cy + 20}" stroke="rgba(0,0,0,0.45)" stroke-width="10" stroke-linejoin="round" fill="none" paint-order="stroke">
         ${match.scores[R]}
-        <animate attributeName="font-size" values="42;56;42" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
-        <animate attributeName="opacity" values="1;0.6;1" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
+        <animate attributeName="font-size" values="72;90;72" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
+      </text>
+      <text ${scoreTextAttrs} x="${scoreRx}" y="${cy + 20}" fill="${C.scoreText}" stroke="rgba(0,0,0,0.3)" stroke-width="4" stroke-linejoin="round" paint-order="stroke fill">
+        ${match.scores[R]}
+        <animate attributeName="font-size" values="72;90;72" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
+        <animate attributeName="opacity" values="1;0.7;1" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
       </text>
     </g>`;
 }

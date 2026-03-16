@@ -530,6 +530,209 @@ h1 {
   gap: 0.35rem;
 }
 
+/* Full screen toggle button */
+.court__fullscreen-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 102;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1;
+  background: rgba(0, 0, 0, 0.35);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.35rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s;
+}
+.court__fullscreen-btn:hover {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+/* Mini overlay — hidden in normal mode, shown in full screen */
+.court__overlay {
+  display: none;
+}
+
+/* Full screen mode */
+
+/* Hide page chrome */
+body.fullscreen-mode .header,
+body.fullscreen-mode .history {
+  display: none;
+}
+
+/* Hide match-view elements that are not needed in full screen */
+.match--fullscreen .timer,
+.match--fullscreen .scoreboard,
+.match--fullscreen .sets-history,
+.match--fullscreen .actions,
+.match--fullscreen .winner {
+  display: none;
+}
+
+/* Court fills the entire viewport */
+.match--fullscreen .court {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--base);
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.match--fullscreen .court__svg {
+  width: 100%;
+  height: 100%;
+  max-height: 100vh;
+  border-radius: 0;
+  object-fit: contain;
+  filter: none;
+}
+
+/* Mini overlay: sits at the top of the fixed court */
+.match--fullscreen .court__overlay {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 101;
+  padding: 0.4rem 3rem 0.4rem 0.75rem; /* right padding avoids the toggle button */
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  gap: 0.25rem;
+}
+
+.court__overlay-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.court__overlay-player {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.court__overlay-player--right {
+  flex-direction: row-reverse;
+}
+
+.court__overlay-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+.court__overlay-name--blue { color: var(--blue-light); }
+.court__overlay-name--red  { color: var(--red-light); }
+
+.court__overlay-score {
+  font-size: 1.6rem;
+  font-weight: 900;
+  line-height: 1;
+  min-width: 1.8ch;
+  text-align: center;
+}
+.court__overlay-score--blue { color: var(--blue-light); }
+.court__overlay-score--red  { color: var(--red-light); }
+
+.court__overlay-timers {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.court__overlay-time {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  font-variant-numeric: tabular-nums;
+}
+
+.court__overlay-sep {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.7rem;
+}
+
+.court__overlay-undo {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.3rem;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.15rem 0.4rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.court__overlay-undo:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+.court__overlay-undo:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.court__overlay-bottom {
+  display: flex;
+  justify-content: center;
+}
+
+/* Completed sets chips in the overlay */
+.court__overlay-sets {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.court__overlay-set-chip {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.3rem;
+  padding: 0.1rem 0.4rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.court__overlay-set-score--blue { color: var(--blue-light); }
+.court__overlay-set-score--red  { color: var(--red-light); }
+
+.court__overlay-set-dash {
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0 0.1rem;
+}
+
+.court__overlay-set-time {
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
+}
+
 /* History */
 .history {
   margin: 1rem auto 0;

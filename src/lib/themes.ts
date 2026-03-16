@@ -15,6 +15,8 @@ export interface CourtColors {
   serveReceive: string;
   background: string;
   netPost: string;
+  /** Maximum-contrast color for score text on the court surface. */
+  scoreText: string;
 }
 
 /** A complete theme definition with CSS variables and court colors. */
@@ -72,6 +74,7 @@ export const THEMES: Theme[] = [
       serveReceive: "rgba(223,142,29,0.35)",
       background: "#dce0e8",
       netPost: "#9ca0b0",
+      scoreText: "#4c4f69",
     },
   },
   {
@@ -100,6 +103,7 @@ export const THEMES: Theme[] = [
       serveReceive: "rgba(249,226,175,0.35)",
       background: "#181825",
       netPost: "#585b70",
+      scoreText: "#cdd6f4",
     },
   },
   {
@@ -128,6 +132,7 @@ export const THEMES: Theme[] = [
       serveReceive: "rgba(230,219,116,0.35)",
       background: "#1e1f1a",
       netPost: "#75715e",
+      scoreText: "#f8f8f2",
     },
   },
   {
@@ -156,6 +161,7 @@ export const THEMES: Theme[] = [
       serveReceive: "rgba(181,137,0,0.3)",
       background: "#eee8d5",
       netPost: "#93a1a1",
+      scoreText: "#073642",
     },
   },
   {
@@ -184,6 +190,7 @@ export const THEMES: Theme[] = [
       serveReceive: "rgba(181,137,0,0.35)",
       background: "#001f27",
       netPost: "#586e75",
+      scoreText: "#fdf6e3",
     },
   },
   {
@@ -212,6 +219,7 @@ export const THEMES: Theme[] = [
       serveReceive: "rgba(241,250,140,0.3)",
       background: "#21222c",
       netPost: "#6272a4",
+      scoreText: "#f8f8f2",
     },
   },
   {
@@ -240,6 +248,7 @@ export const THEMES: Theme[] = [
       serveReceive: "rgba(215,153,33,0.3)",
       background: "#ebdbb2",
       netPost: "#928374",
+      scoreText: "#3c3836",
     },
   },
   {
@@ -268,6 +277,7 @@ export const THEMES: Theme[] = [
       serveReceive: "rgba(250,189,47,0.35)",
       background: "#1d2021",
       netPost: "#665c54",
+      scoreText: "#ebdbb2",
     },
   },
   {
@@ -296,6 +306,7 @@ export const THEMES: Theme[] = [
       serveReceive: "rgba(235,203,139,0.35)",
       background: "#272c36",
       netPost: "#4c566a",
+      scoreText: "#eceff4",
     },
   },
   {
@@ -324,6 +335,7 @@ export const THEMES: Theme[] = [
       serveReceive: "rgba(224,175,104,0.35)",
       background: "#16161e",
       netPost: "#565f89",
+      scoreText: "#c0caf5",
     },
   },
 ];

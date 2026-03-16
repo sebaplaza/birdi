@@ -4,7 +4,7 @@
  * set history, winner banner, and action buttons.
  * All interactions dispatch events through the FSM.
  */
-import { effect } from "@preact/signals-core";
+import { signal, effect } from "@preact/signals-core";
 import { h, text, bindText, show } from "../lib/dom.js";
 import { renderCourtSvg } from "../lib/court.js";
 import { currentTheme } from "../lib/themes.js";
@@ -288,7 +288,124 @@ export function createMatchView(): HTMLElement {
   );
   show(breakOverlay, () => state.value.type === "break");
 
-  const court = h("div", { class: "court" }, courtSvg, breakOverlay);
+  // ── Full screen mode ──
+
+  /** Whether the court is currently in focus/full-screen mode. */
+  const fullscreen = signal(false);
+
+  // Toggle button — always visible in the top-right corner of the court.
+  const fsBtn = h("button", {
+    class: "court__fullscreen-btn",
+    type: "button",
+    "aria-label": "Toggle full screen",
+    onclick: () => {
+      fullscreen.value = !fullscreen.value;
+    },
+  });
+  bindText(fsBtn, () => (fullscreen.value ? "✕" : "⛶"));
+
+  // ── Mini overlay (visible only in full screen mode) ──
+  // Shows player names, scores, set/total timers, and an undo button
+  // so the user has all essential controls without leaving full screen.
+
+  const overlayLeftName = h("span", { class: "court__overlay-name" });
+  const overlayLeftScore = h("span", { class: "court__overlay-score" });
+  const overlayRightName = h("span", { class: "court__overlay-name" });
+  const overlayRightScore = h("span", { class: "court__overlay-score" });
+
+  // Sync overlay player data reactively with the match state
+  effect(() => {
+    const m = currentMatch.value;
+    if (!m) return;
+    const L = m.leftPlayer;
+    const R = m.rightPlayer;
+    overlayLeftName.textContent = m.players[L];
+    overlayLeftScore.textContent = String(m.scores[L]);
+    overlayRightName.textContent = m.players[R];
+    overlayRightScore.textContent = String(m.scores[R]);
+    overlayLeftScore.className = `court__overlay-score court__overlay-score--${m.swapped ? "red" : "blue"}`;
+    overlayRightScore.className = `court__overlay-score court__overlay-score--${m.swapped ? "blue" : "red"}`;
+    overlayLeftName.className = `court__overlay-name court__overlay-name--${m.swapped ? "red" : "blue"}`;
+    overlayRightName.className = `court__overlay-name court__overlay-name--${m.swapped ? "blue" : "red"}`;
+  });
+
+  const overlaySetTime = h("span", { class: "court__overlay-time" });
+  bindText(overlaySetTime, () => setTime.value);
+  const overlayTotalTime = h("span", { class: "court__overlay-time" });
+  bindText(overlayTotalTime, () => totalTime.value);
+
+  const overlayUndoBtn = h("button", {
+    class: "court__overlay-undo",
+    type: "button",
+    "aria-label": "Undo",
+    onclick: () => send({ type: "UNDO" }),
+  });
+  overlayUndoBtn.textContent = ICON_UNDO;
+
+  // Completed sets history row — rebuilt whenever sets change
+  const overlaySets = h("div", { class: "court__overlay-sets" });
+  effect(() => {
+    const m = currentMatch.value;
+    overlaySets.innerHTML = "";
+    if (!m || m.completedSets.length === 0) {
+      overlaySets.style.display = "none";
+      return;
+    }
+    overlaySets.style.display = "";
+    const L = m.leftPlayer;
+    const R = m.rightPlayer;
+    const leftColor = m.swapped ? "red" : "blue";
+    const rightColor = m.swapped ? "blue" : "red";
+
+    for (let i = 0; i < m.completedSets.length; i++) {
+      const set = m.completedSets[i];
+      const time = m.setTimes[i] ? formatMs(m.setTimes[i]) : "";
+      const chip = h("span", { class: "court__overlay-set-chip" });
+      // e.g. "21–18 (01:45)"
+      const scoreSpan = h(
+        "span",
+        null,
+        h("span", { class: `court__overlay-set-score--${leftColor}` }, String(set[L])),
+        h("span", { class: "court__overlay-set-dash" }, "–"),
+        h("span", { class: `court__overlay-set-score--${rightColor}` }, String(set[R])),
+      );
+      chip.append(scoreSpan);
+      if (time) {
+        chip.append(h("span", { class: "court__overlay-set-time" }, ` (${time})`));
+      }
+      overlaySets.append(chip);
+    }
+  });
+
+  const courtOverlay = h(
+    "div",
+    { class: "court__overlay" },
+    // Top row: left player | timers | right player
+    h(
+      "div",
+      { class: "court__overlay-top" },
+      h("div", { class: "court__overlay-player" }, overlayLeftName, overlayLeftScore),
+      h(
+        "div",
+        { class: "court__overlay-timers" },
+        overlaySetTime,
+        h("span", { class: "court__overlay-sep" }, "|"),
+        overlayTotalTime,
+      ),
+      h(
+        "div",
+        { class: "court__overlay-player court__overlay-player--right" },
+        overlayRightScore,
+        overlayRightName,
+      ),
+    ),
+    // Middle row: completed sets (hidden when no sets played yet)
+    overlaySets,
+    // Bottom row: undo button centered
+    h("div", { class: "court__overlay-bottom" }, overlayUndoBtn),
+  );
+
+  const court = h("div", { class: "court" }, courtSvg, breakOverlay, courtOverlay, fsBtn);
 
   // ── Action buttons (undo, switch sides, end match, new match) ──
   const actions = h(
@@ -321,7 +438,12 @@ export function createMatchView(): HTMLElement {
   );
 
   // ── Disable all interactive buttons during break ──
-  const allButtons = [leftBtn, rightBtn, ...Array.from(actions.children)] as HTMLButtonElement[];
+  const allButtons = [
+    leftBtn,
+    rightBtn,
+    overlayUndoBtn,
+    ...Array.from(actions.children),
+  ] as HTMLButtonElement[];
   effect(() => {
     const inBreak = state.value.type === "break";
     for (const btn of allButtons) {
@@ -329,5 +451,25 @@ export function createMatchView(): HTMLElement {
     }
   });
 
-  return h("div", null, winner, timer, scoreboard, setsHistory, court, actions);
+  const root = h("div", null, winner, timer, scoreboard, setsHistory, court, actions);
+
+  // Apply/remove fullscreen classes and auto-exit when the match is no longer active.
+  effect(() => {
+    const fs = fullscreen.value;
+    const s = state.value;
+
+    // Auto-exit full screen when the match finishes naturally or ends
+    if (s.type !== "playing" && s.type !== "break") {
+      fullscreen.value = false;
+      return;
+    }
+
+    root.classList.toggle("match--fullscreen", fs);
+    document.body.classList.toggle("fullscreen-mode", fs);
+
+    // Scroll to top so the fixed court covers the whole viewport cleanly
+    if (fs) window.scrollTo(0, 0);
+  });
+
+  return root;
 }
