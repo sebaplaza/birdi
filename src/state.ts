@@ -1,5 +1,5 @@
 /**
- * Root Finite State Machine (FSM) for the application.
+ * Root FSM for the application.
  *
  * All state transitions flow through a single `send()` dispatcher.
  * The root FSM manages two concerns:
@@ -7,10 +7,10 @@
  *   1. Top-level routing: setup vs in-game
  *   2. Global events (DELETE_HISTORY, CLEAR_HISTORY)
  *
- * In-game states (playing, break, finished) are delegated to the game sub-FSM.
+ * In-game states (playing, break, finished) are delegated to the game machine.
  *
  *   setup ──START_MATCH──> playing
- *   playing / break / finished ──> game-fsm.send()
+ *   playing / break / finished ──> gameMachine.send()
  */
 import { signal, computed, effect } from "@preact/signals-core";
 import { Match } from "./lib/match.js";
@@ -18,24 +18,20 @@ import type { HistoryEntry } from "./lib/match.js";
 import { loadMatch, saveMatch, loadHistory, saveHistory, savePlayer } from "./lib/storage.js";
 import { formatMs } from "./lib/utils.js";
 import { t } from "./lib/i18n.js";
-import { send as gameSend, type GameInput } from "./game-fsm.js";
+import { gameMachine } from "./game-fsm.js";
+import type { GameState } from "./game-fsm.js";
 
 // ── State types ──
 
-/** In-game states returned by the game sub-FSM (break has no timestamp yet). */
-export type GameState =
-  | { type: "playing"; match: Match }
-  | { type: "break"; match: Match; duration: number }
-  | { type: "finished"; match: Match };
-
 /**
  * Full break state stored in the root FSM.
- * Extends GameState's break with a wall-clock timestamp so elapsed pause
- * time can be subtracted from `setStartedAt` when play resumes.
+ * `breakStartedAt` is added by the root (not the game machine) so pause
+ * duration can be subtracted from `setStartedAt` when play resumes.
+ * The game machine receives it back via the GameState union.
  */
 type BreakState = { type: "break"; match: Match; duration: number; breakStartedAt: number };
 
-/** Events accepted by the game sub-FSM. */
+/** Events accepted by the game machine. */
 export type GameEvent =
   | { type: "ADD_POINT"; player: number }
   | { type: "UNDO" }
@@ -68,8 +64,7 @@ export type AppEvent =
 
 /**
  * Derives the initial app state from persisted storage on startup.
- * If an in-progress match exists, resumes it in the appropriate state.
- * Otherwise returns the setup state.
+ * Resumes an in-progress match if one exists, otherwise returns setup.
  */
 function initState(): AppState {
   const saved = loadMatch();
@@ -108,7 +103,7 @@ export const currentMatch = computed((): Match | null => {
 
 /** Formatted elapsed time for the current set (e.g. "02:35"). Frozen when finished. */
 export const setTime = computed(() => {
-  void tick.value; // subscribe to tick so this recomputes every second
+  void tick.value; // subscribe so this recomputes every second
   const m = currentMatch.value;
   if (!m) return "00:00";
   if (m.finished) return formatMs(m.setTimes[m.setTimes.length - 1] || 0);
@@ -117,7 +112,7 @@ export const setTime = computed(() => {
 
 /** Formatted total match elapsed time. Frozen when finished. */
 export const totalTime = computed(() => {
-  void tick.value; // subscribe to tick so this recomputes every second
+  void tick.value; // subscribe so this recomputes every second
   const m = currentMatch.value;
   if (!m) return "00:00";
   if (m.finished) return formatMs(m.matchTime);
@@ -231,32 +226,41 @@ export function send(event: AppEvent): void {
     return;
   }
 
-  // In-game states — delegate to game sub-FSM
-  const result = gameSend(stateValue as GameInput, event as GameEvent);
+  // In-game states — delegate to the game machine
+  const result = gameMachine.send(stateValue as GameState, event as GameEvent);
   if (!result) return;
 
-  if ("exit" in result) {
-    // NEW_MATCH from playing: confirm before discarding the active match
-    if (result.confirm && !confirm(t("match.abandonConfirm"))) return;
-    saveMatch(null);
-    state.value = { type: "setup" };
-  } else if ("save" in result) {
-    // END_MATCH: save to history then return to setup
-    stopTimer();
-    doSaveHistory(result.save);
-    state.value = { type: "setup" };
-  } else {
-    const next = result.transition;
-    if (next.type === "finished") {
-      // Match ended naturally (set won) — stop timer, stay on finished screen
-      // until the user explicitly clicks "End Match" to save to history.
+  // Dispatch on result.kind — TypeScript checks this switch is exhaustive.
+  switch (result.kind) {
+    case "exit":
+      // NEW_MATCH: optionally confirm before discarding the active match.
+      if (result.confirm && !confirm(t("match.abandonConfirm"))) return;
+      saveMatch(null);
+      state.value = { type: "setup" };
+      break;
+
+    case "effect":
+      // END_MATCH: save finished match to history, return to setup.
+      // result.name === "saveHistory" (only one effect today; switch if more are added)
       stopTimer();
-    }
-    if (next.type === "break") {
-      // Record wall-clock time so pause duration can be excluded from set timers.
-      state.value = { ...next, breakStartedAt: Date.now() };
-    } else {
-      state.value = next;
+      doSaveHistory(result.data);
+      state.value = { type: "setup" };
+      break;
+
+    case "goto": {
+      const next = result.state;
+      if (next.type === "finished") {
+        // Match ended naturally (set won) — stop timer, wait for user to confirm save.
+        stopTimer();
+      }
+      if (next.type === "break") {
+        // Stamp the break with the current wall-clock time so pause duration
+        // can be excluded from set timers when play resumes.
+        state.value = { ...next, breakStartedAt: Date.now() };
+      } else {
+        state.value = next;
+      }
+      break;
     }
   }
 }

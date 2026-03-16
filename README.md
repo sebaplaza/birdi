@@ -61,6 +61,70 @@ No server, no account, no telemetry. Everything runs in the browser and persists
 
 ---
 
+## State machine
+
+The app is driven by two finite state machines built on a small hand-rolled FSM library (`src/lib/fsm.ts`).
+
+### Root FSM (`src/state.ts`)
+
+Handles top-level routing and global events. In-game states are delegated to the game machine.
+
+```mermaid
+stateDiagram-v2
+    [*] --> setup
+
+    setup --> playing : START_MATCH
+
+    playing --> playing   : ADD_POINT (normal)\nUNDO\nSWITCH_SIDES
+    playing --> break60   : ADD_POINT (score reaches 11)
+    playing --> break120  : ADD_POINT (set won)
+    playing --> finished  : ADD_POINT (match won)
+    playing --> setup     : END_MATCH / NEW_MATCH [confirmed]
+
+    break60  --> playing  : RESUME
+    break120 --> playing  : RESUME
+
+    finished --> setup    : END_MATCH (save to history)\nNEW_MATCH (discard)
+
+    note right of break60
+        60s interval break
+        (first player reaches 11)
+    end note
+
+    note right of break120
+        120s inter-set break
+        (set won)
+    end note
+```
+
+### Game machine (`src/game-fsm.ts`)
+
+The sub-machine that handles all in-game logic. Uses `goto`, `exit`, and `effect` transitions from `src/lib/fsm.ts`.
+
+```mermaid
+stateDiagram-v2
+    [*] --> playing
+
+    playing --> playing   : ADD_POINT [normal]\nUNDO\nSWITCH_SIDES
+    playing --> break     : ADD_POINT [score = 11] / duration 60s\nADD_POINT [set won]  / duration 120s
+    playing --> finished  : ADD_POINT [match won]
+    playing --> [*]       : END_MATCH → effect(saveHistory)\nNEW_MATCH → exit(confirm=true)
+
+    break   --> playing   : RESUME
+
+    finished --> [*]      : END_MATCH → effect(saveHistory)\nNEW_MATCH → exit(confirm=false)
+```
+
+### Transition types (`src/lib/fsm.ts`)
+
+| Kind       | Meaning                                                  |
+|------------|----------------------------------------------------------|
+| `goto`     | Move to a new state                                      |
+| `exit`     | Leave the machine (optionally ask for confirmation)      |
+| `effect`   | Request a named side effect with data (e.g. save to storage) |
+
+---
+
 ## Tech stack
 
 | Concern         | Tool                   |
