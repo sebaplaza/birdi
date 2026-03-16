@@ -6,7 +6,7 @@
  */
 import { signal, effect } from "@preact/signals-core";
 import { h, text, bindText, show } from "../lib/dom.js";
-import { renderCourtSvg } from "../lib/court.js";
+import { renderCourtSvg, COURT_VB_W, COURT_VB_H } from "../lib/court.js";
 import { currentTheme } from "../lib/themes.js";
 import { t } from "../lib/i18n.js";
 import { formatMs } from "../lib/utils.js";
@@ -241,7 +241,7 @@ export function createMatchView(): HTMLElement {
   // ── Court SVG (re-renders on match or theme change) ──
   const courtSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   courtSvg.setAttribute("class", "court__svg");
-  courtSvg.setAttribute("viewBox", "0 0 700 400");
+  courtSvg.setAttribute("viewBox", `0 0 ${COURT_VB_W} ${COURT_VB_H}`);
   effect(() => {
     const m = currentMatch.value;
     void currentTheme.value;
@@ -455,19 +455,21 @@ export function createMatchView(): HTMLElement {
 
   // Apply/remove fullscreen classes and auto-exit when the match is no longer active.
   effect(() => {
-    const fs = fullscreen.value;
     const s = state.value;
 
-    // Auto-exit full screen when the match finishes naturally or ends
+    // Auto-exit when the match finishes or returns to setup — reset the signal
+    // but do NOT return early: we must still fall through to remove the CSS classes.
     if (s.type !== "playing" && s.type !== "break") {
       fullscreen.value = false;
-      return;
     }
 
+    // Always read fullscreen.value AFTER the potential reset above so that
+    // the classes are toggled correctly in the same effect run.
+    const fs = fullscreen.value;
     root.classList.toggle("match--fullscreen", fs);
     document.body.classList.toggle("fullscreen-mode", fs);
 
-    // Scroll to top so the fixed court covers the whole viewport cleanly
+    // Scroll to top so the fixed court covers the whole viewport cleanly on enter
     if (fs) window.scrollTo(0, 0);
   });
 

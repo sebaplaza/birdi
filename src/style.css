@@ -612,6 +612,9 @@ body.fullscreen-mode .history {
   left: 0;
   right: 0;
   z-index: 101;
+  /* Pass pointer events through to the court SVG below.
+     Only interactive children (undo button) re-enable pointer events. */
+  pointer-events: none;
   padding: 0.4rem 3rem 0.4rem 0.75rem; /* right padding avoids the toggle button */
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(6px);
@@ -687,6 +690,7 @@ body.fullscreen-mode .history {
   padding: 0.15rem 0.4rem;
   line-height: 1;
   flex-shrink: 0;
+  pointer-events: auto; /* re-enable: this is the only interactive element in the overlay */
 }
 .court__overlay-undo:hover {
   background: rgba(255, 255, 255, 0.25);

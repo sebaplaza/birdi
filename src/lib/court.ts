@@ -1,10 +1,60 @@
 /**
  * Badminton court SVG renderer.
- * Generates the full court visualization including surface zones,
- * serve indicators, shuttlecock animation, and clickable score areas.
+ * All court dimensions are derived from official BWF measurements so the
+ * rendered proportions exactly match a real court.
  */
 import type { Match } from "./match.js";
 import type { CourtColors } from "./themes.js";
+
+// ── Official BWF court dimensions (meters) ────────────────────────────────────
+
+/** Baseline to baseline — runs left ↔ right in the SVG. */
+const COURT_LENGTH = 13.4;
+/** Doubles sideline to sideline — runs top ↔ bottom in the SVG. */
+const COURT_WIDTH_DBL = 6.1;
+/** Singles sideline to sideline (inset from doubles lines). */
+const COURT_WIDTH_SGL = 5.18;
+/** Distance from the net to the short service line (each half). */
+const NET_TO_SHORT_SVC = 1.98;
+/** Distance from each baseline to the doubles long service line. */
+const LONG_SVC_INSET = 0.76;
+/** Standard line thickness. */
+const LINE_THICKNESS = 0.04;
+
+// ── SVG canvas ────────────────────────────────────────────────────────────────
+
+/** Fixed viewBox width. */
+const VB_W = 700;
+
+/**
+ * ViewBox height derived from the official court aspect ratio (13.4 : 6.1 ≈ 2.197).
+ * CSS `height: auto` on the SVG element will then render the correct proportions.
+ */
+const VB_H = Math.round((VB_W * COURT_WIDTH_DBL) / COURT_LENGTH); // ≈ 319
+
+/** Visual padding around the court surface. */
+const PADDING = Math.round(VB_W * 0.03); // ≈ 21
+
+// ── Scale factors: meters → SVG units ────────────────────────────────────────
+
+const SCALE_X = (VB_W - PADDING * 2) / COURT_LENGTH;
+const SCALE_Y = (VB_H - PADDING * 2) / COURT_WIDTH_DBL;
+
+/**
+ * Official line width in SVG units (40 mm scaled).
+ * Clamped to ≥ 1.5 so lines stay legible at small screen sizes.
+ */
+const LINE_W = Math.max(1.5, LINE_THICKNESS * SCALE_X);
+
+// ── Exported viewBox constants ────────────────────────────────────────────────
+
+/** ViewBox width — import this in match-view.ts to keep the SVG in sync. */
+export const COURT_VB_W = VB_W;
+
+/** ViewBox height — import this in match-view.ts to keep the SVG in sync. */
+export const COURT_VB_H = VB_H;
+
+// ── Internal types ────────────────────────────────────────────────────────────
 
 /** A rectangular region on the court. */
 interface Box {
@@ -16,17 +66,35 @@ interface Box {
 
 /** Precomputed court layout measurements. */
 interface Dimensions {
+  /** Total court width in SVG units (= COURT_LENGTH * SCALE_X). */
   cw: number;
+  /** Total court height in SVG units (= COURT_WIDTH_DBL * SCALE_Y). */
   ch: number;
+  /** Vertical center of the court. */
   cy: number;
+  /** Horizontal center (net position). */
   midX: number;
+  /** Top doubles sideline (outer edge). */
+  dblTop: number;
+  /** Bottom doubles sideline (outer edge). */
+  dblBot: number;
+  /** Height of each doubles side band (singles inset distance). */
+  bandH: number;
+  /** Top edge of the singles court (inset from doubles sideline). */
   sTop: number;
+  /** Bottom edge of the singles court. */
   sBot: number;
+  /** Height of the singles court. */
   sH: number;
+  /** Short service line, left half (= midX − NET_TO_SHORT_SVC * SCALE_X). */
   leftShort: number;
+  /** Doubles long service line, left half (= PADDING + LONG_SVC_INSET * SCALE_X). */
   leftLong: number;
+  /** Short service line, right half. */
   rightShort: number;
+  /** Doubles long service line, right half. */
   rightLong: number;
+  /** Half the singles court height (used to split service boxes). */
   halfSH: number;
 }
 
@@ -38,9 +106,7 @@ interface ServeBoxes {
   to: Box;
 }
 
-const COURT_WIDTH = 700;
-const COURT_HEIGHT = 400;
-const PADDING = 20;
+// ── Public API ────────────────────────────────────────────────────────────────
 
 /**
  * Renders the complete court SVG inner content.
@@ -61,6 +127,7 @@ export function renderCourtSvg(match: Match | null, courtColors: CourtColors): s
         redDark: courtColors.blueDark,
       }
     : courtColors;
+
   const L = match.leftPlayer;
   const R = match.rightPlayer;
 
@@ -82,30 +149,44 @@ export function renderCourtSvg(match: Match | null, courtColors: CourtColors): s
   ].join("");
 }
 
-/** Calculates all key positions from the fixed court dimensions. */
+// ── Dimension helpers ─────────────────────────────────────────────────────────
+
+/** Calculates all key positions from the official court measurements. */
 function computeDimensions(): Dimensions {
-  const cw = COURT_WIDTH - PADDING * 2,
-    ch = COURT_HEIGHT - PADDING * 2;
-  const cy = COURT_HEIGHT / 2,
-    midX = PADDING + cw / 2;
-  const singlesInset = ch * 0.065;
-  const sTop = PADDING + singlesInset,
-    sBot = PADDING + ch - singlesInset,
-    sH = sBot - sTop;
-  const shortDist = cw * 0.13,
-    longDist = cw * 0.42;
+  const cw = VB_W - PADDING * 2;
+  const ch = VB_H - PADDING * 2;
+  const midX = VB_W / 2;
+  const cy = VB_H / 2;
+
+  // Singles sideline inset from the doubles sideline on each side
+  const sglInset = ((COURT_WIDTH_DBL - COURT_WIDTH_SGL) / 2) * SCALE_Y;
+  const dblTop = PADDING;
+  const dblBot = PADDING + ch;
+  const sTop = PADDING + sglInset;
+  const sBot = PADDING + ch - sglInset;
+  const sH = sBot - sTop;
+
+  // Short service line: 1.98 m from the net on each side
+  const shortDist = NET_TO_SHORT_SVC * SCALE_X;
+
+  // Doubles long service line: 0.76 m inset from each baseline
+  const longInset = LONG_SVC_INSET * SCALE_X;
+
   return {
     cw,
     ch,
     cy,
     midX,
+    dblTop,
+    dblBot,
+    bandH: sglInset,
     sTop,
     sBot,
     sH,
     leftShort: midX - shortDist,
-    leftLong: midX - longDist,
+    leftLong: PADDING + longInset,
     rightShort: midX + shortDist,
-    rightLong: midX + longDist,
+    rightLong: VB_W - PADDING - longInset,
     halfSH: sH / 2,
   };
 }
@@ -115,10 +196,11 @@ function computeDimensions(): Dimensions {
  * In badminton, even scores serve from the right box, odd from the left.
  */
 function computeServeBoxes(match: Match, L: number, dim: Dimensions): ServeBoxes {
-  const serving = match.serving,
-    serverScore = match.scores[serving];
-  const isEven = serverScore % 2 === 0,
-    servingSide = serving === L ? "left" : "right";
+  const { serving } = match;
+  const serverScore = match.scores[serving];
+  const isEven = serverScore % 2 === 0;
+  const servingSide = serving === L ? "left" : "right";
+
   let fromKey: string, toKey: string;
   if (servingSide === "left") {
     fromKey = isEven ? "left-bot" : "left-top";
@@ -127,109 +209,148 @@ function computeServeBoxes(match: Match, L: number, dim: Dimensions): ServeBoxes
     fromKey = isEven ? "right-top" : "right-bot";
     toKey = isEven ? "left-bot" : "left-top";
   }
+
+  const { leftLong, leftShort, rightShort, rightLong, sTop, halfSH } = dim;
   const boxes: Record<string, Box> = {
-    "left-top": { x: dim.leftLong, y: dim.sTop, w: dim.leftShort - dim.leftLong, h: dim.halfSH },
-    "left-bot": {
-      x: dim.leftLong,
-      y: dim.sTop + dim.halfSH,
-      w: dim.leftShort - dim.leftLong,
-      h: dim.halfSH,
-    },
-    "right-top": {
-      x: dim.rightShort,
-      y: dim.sTop,
-      w: dim.rightLong - dim.rightShort,
-      h: dim.halfSH,
-    },
-    "right-bot": {
-      x: dim.rightShort,
-      y: dim.sTop + dim.halfSH,
-      w: dim.rightLong - dim.rightShort,
-      h: dim.halfSH,
-    },
+    "left-top": { x: leftLong, y: sTop, w: leftShort - leftLong, h: halfSH },
+    "left-bot": { x: leftLong, y: sTop + halfSH, w: leftShort - leftLong, h: halfSH },
+    "right-top": { x: rightShort, y: sTop, w: rightLong - rightShort, h: halfSH },
+    "right-bot": { x: rightShort, y: sTop + halfSH, w: rightLong - rightShort, h: halfSH },
   };
+
   return { fromKey, toKey, from: boxes[fromKey], to: boxes[toKey] };
 }
 
+// ── SVG render helpers ────────────────────────────────────────────────────────
+
 /** SVG filter definitions (arrow marker, glow effect). */
 function renderDefs(C: CourtColors): string {
-  return `<defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="${C.serve}"/></marker><filter id="serve-glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+  return `<defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="${C.serve}"/>
+    </marker>
+    <filter id="serve-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>`;
 }
 
 /** Court background rectangle. */
 function renderBackground(C: CourtColors): string {
-  return `<rect x="0" y="0" width="${COURT_WIDTH}" height="${COURT_HEIGHT}" rx="12" fill="${C.background}"/>`;
+  return `<rect x="0" y="0" width="${VB_W}" height="${VB_H}" rx="12" fill="${C.background}"/>`;
 }
 
 /** Colored court surface zones (blue left, red right, with serve-box shading). */
 function renderCourtSurface(C: CourtColors, dim: Dimensions, serveBoxes: ServeBoxes): string {
-  const { midX, sTop, sH, leftLong, leftShort, rightShort, rightLong, halfSH } = dim;
+  const {
+    cw,
+    midX,
+    dblTop,
+    dblBot,
+    bandH,
+    sTop,
+    sH,
+    leftLong,
+    leftShort,
+    rightShort,
+    rightLong,
+    halfSH,
+  } = dim;
   const { fromKey } = serveBoxes;
-  const bf = C.blueFill,
-    bd = C.blueDark,
-    rf = C.redFill,
-    rd = C.redDark;
+  const { blueFill: bf, blueDark: bd, redFill: rf, redDark: rd } = C;
+
+  // Full court width for the doubles bands
+  const fullW = PADDING + cw - PADDING; // = cw
+
   return `
+    <!-- Singles court surface (blue left, red right) -->
     <rect x="${PADDING}" y="${sTop}" width="${midX - PADDING}" height="${sH}" fill="${bf}" rx="4"/>
     <rect x="${PADDING}" y="${sTop}" width="${leftLong - PADDING}" height="${sH}" fill="${bd}" rx="4"/>
     <rect x="${leftLong}" y="${sTop}" width="${leftShort - leftLong}" height="${halfSH}" fill="${fromKey === "left-top" ? bf : bd}"/>
     <rect x="${leftLong}" y="${sTop + halfSH}" width="${leftShort - leftLong}" height="${halfSH}" fill="${fromKey === "left-bot" ? bf : bd}"/>
     <rect x="${leftShort}" y="${sTop}" width="${midX - leftShort}" height="${sH}" fill="${bf}"/>
-    <rect x="${midX}" y="${sTop}" width="${PADDING + dim.cw - midX}" height="${sH}" fill="${rf}" rx="4"/>
-    <rect x="${rightLong}" y="${sTop}" width="${PADDING + dim.cw - rightLong}" height="${sH}" fill="${rd}" rx="4"/>
+    <rect x="${midX}" y="${sTop}" width="${PADDING + cw - midX}" height="${sH}" fill="${rf}" rx="4"/>
+    <rect x="${rightLong}" y="${sTop}" width="${PADDING + cw - rightLong}" height="${sH}" fill="${rd}" rx="4"/>
     <rect x="${rightShort}" y="${sTop}" width="${rightLong - rightShort}" height="${halfSH}" fill="${fromKey === "right-top" ? rf : rd}"/>
     <rect x="${rightShort}" y="${sTop + halfSH}" width="${rightLong - rightShort}" height="${halfSH}" fill="${fromKey === "right-bot" ? rf : rd}"/>
-    <rect x="${midX}" y="${sTop}" width="${rightShort - midX}" height="${sH}" fill="${rf}"/>`;
+    <rect x="${midX}" y="${sTop}" width="${rightShort - midX}" height="${sH}" fill="${rf}"/>
+    <!-- Doubles side bands (top and bottom strips between singles and doubles lines) -->
+    <rect x="${PADDING}" y="${dblTop}" width="${midX - PADDING}" height="${bandH}" fill="${bd}" rx="4" opacity="0.7"/>
+    <rect x="${PADDING}" y="${dblBot - bandH}" width="${midX - PADDING}" height="${bandH}" fill="${bd}" rx="4" opacity="0.7"/>
+    <rect x="${midX}" y="${dblTop}" width="${fullW - midX + PADDING}" height="${bandH}" fill="${rd}" rx="4" opacity="0.7"/>
+    <rect x="${midX}" y="${dblBot - bandH}" width="${fullW - midX + PADDING}" height="${bandH}" fill="${rd}" rx="4" opacity="0.7"/>`;
 }
 
 /** Highlighted borders around the serve origin and destination boxes. */
 function renderServeHighlights(C: CourtColors, from: Box, to: Box): string {
+  const inset = LINE_W * 1.5;
   return `
-    <rect x="${from.x + 3}" y="${from.y + 3}" width="${from.w - 6}" height="${from.h - 6}" fill="none" stroke="${C.serve}" stroke-width="3.5" rx="5" filter="url(#serve-glow)"/>
-    <rect x="${to.x + 3}" y="${to.y + 3}" width="${to.w - 6}" height="${to.h - 6}" fill="${C.serveReceive}" stroke="${C.serve}" stroke-width="2.5" rx="5" stroke-dasharray="10 5" opacity="0.8"/>`;
+    <rect x="${from.x + inset}" y="${from.y + inset}" width="${from.w - inset * 2}" height="${from.h - inset * 2}"
+      fill="none" stroke="${C.serve}" stroke-width="${LINE_W * 1.5}" rx="5" filter="url(#serve-glow)"/>
+    <rect x="${to.x + inset}" y="${to.y + inset}" width="${to.w - inset * 2}" height="${to.h - inset * 2}"
+      fill="${C.serveReceive}" stroke="${C.serve}" stroke-width="${LINE_W}" rx="5"
+      stroke-dasharray="${LINE_W * 5} ${LINE_W * 2.5}" opacity="0.8"/>`;
 }
 
-/** White boundary and division lines. */
+/** White boundary and division lines at official 40 mm thickness. */
 function renderCourtLines(dim: Dimensions): string {
-  const { cw, cy, sTop, sBot, sH, leftLong, leftShort, rightShort, rightLong } = dim;
+  const { cw, cy, dblTop, dblBot, sTop, sBot, sH, leftLong, leftShort, rightShort, rightLong } =
+    dim;
   return `
-    <rect x="${PADDING}" y="${sTop}" width="${cw}" height="${sH}" fill="none" stroke="white" stroke-width="2.5" rx="3"/>
-    <line x1="${PADDING}" y1="${cy}" x2="${leftShort}" y2="${cy}" stroke="white" stroke-width="2"/>
-    <line x1="${rightShort}" y1="${cy}" x2="${PADDING + cw}" y2="${cy}" stroke="white" stroke-width="2"/>
-    <line x1="${leftShort}" y1="${sTop}" x2="${leftShort}" y2="${sBot}" stroke="white" stroke-width="2"/>
-    <line x1="${rightShort}" y1="${sTop}" x2="${rightShort}" y2="${sBot}" stroke="white" stroke-width="2"/>
-    <line x1="${leftLong}" y1="${sTop}" x2="${leftLong}" y2="${sBot}" stroke="white" stroke-width="2"/>
-    <line x1="${rightLong}" y1="${sTop}" x2="${rightLong}" y2="${sBot}" stroke="white" stroke-width="2"/>`;
+    <!-- Doubles outer boundary -->
+    <rect x="${PADDING}" y="${dblTop}" width="${cw}" height="${dblBot - dblTop}"
+      fill="none" stroke="white" stroke-width="${LINE_W * 1.2}" rx="4"/>
+    <!-- Singles inner boundary -->
+    <rect x="${PADDING}" y="${sTop}" width="${cw}" height="${sH}"
+      fill="none" stroke="white" stroke-width="${LINE_W * 1.2}" rx="3"/>
+    <!-- Center service lines (left and right halves) -->
+    <line x1="${PADDING}"    y1="${cy}" x2="${leftShort}"    y2="${cy}" stroke="white" stroke-width="${LINE_W}"/>
+    <line x1="${rightShort}" y1="${cy}" x2="${PADDING + cw}" y2="${cy}" stroke="white" stroke-width="${LINE_W}"/>
+    <!-- Short service lines -->
+    <line x1="${leftShort}"  y1="${sTop}" x2="${leftShort}"  y2="${sBot}" stroke="white" stroke-width="${LINE_W}"/>
+    <line x1="${rightShort}" y1="${sTop}" x2="${rightShort}" y2="${sBot}" stroke="white" stroke-width="${LINE_W}"/>
+    <!-- Doubles long service lines -->
+    <line x1="${leftLong}"   y1="${dblTop}" x2="${leftLong}"   y2="${dblBot}" stroke="white" stroke-width="${LINE_W}"/>
+    <line x1="${rightLong}"  y1="${dblTop}" x2="${rightLong}"  y2="${dblBot}" stroke="white" stroke-width="${LINE_W}"/>`;
 }
 
 /** Net line and post caps at center court. */
 function renderNet(C: CourtColors, dim: Dimensions): string {
-  const { midX, sTop, sBot } = dim;
+  const { midX, dblTop, dblBot } = dim;
+  const postW = LINE_W * 3;
+  const postH = LINE_W * 5;
   return `
-    <line x1="${midX}" y1="${sTop - 5}" x2="${midX}" y2="${sBot + 5}" stroke="white" stroke-width="4"/>
-    <line x1="${midX}" y1="${sTop - 5}" x2="${midX}" y2="${sBot + 5}" stroke="white" stroke-width="2" opacity="0.3"/>
-    <rect x="${midX - 3}" y="${sTop - 10}" width="6" height="10" rx="2" fill="${C.netPost}"/>
-    <rect x="${midX - 3}" y="${sBot}" width="6" height="10" rx="2" fill="${C.netPost}"/>`;
+    <line x1="${midX}" y1="${dblTop - postH / 2}" x2="${midX}" y2="${dblBot + postH / 2}"
+      stroke="white" stroke-width="${LINE_W * 2}"/>
+    <line x1="${midX}" y1="${dblTop - postH / 2}" x2="${midX}" y2="${dblBot + postH / 2}"
+      stroke="white" stroke-width="${LINE_W}" opacity="0.3"/>
+    <rect x="${midX - postW / 2}" y="${dblTop - postH}" width="${postW}" height="${postH}" rx="2" fill="${C.netPost}"/>
+    <rect x="${midX - postW / 2}" y="${dblBot}"          width="${postW}" height="${postH}" rx="2" fill="${C.netPost}"/>`;
 }
 
 /** Dashed arrow from the serve box to the receive box. */
 function renderServeArrow(C: CourtColors, from: Box, to: Box): string {
-  const x1 = from.x + from.w / 2,
-    y1 = from.y + from.h / 2,
-    x2 = to.x + to.w / 2,
-    y2 = to.y + to.h / 2;
-  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${C.serve}" stroke-width="2.5" stroke-dasharray="12 6" opacity="0.85" marker-end="url(#arrowhead)"/>`;
+  const x1 = from.x + from.w / 2;
+  const y1 = from.y + from.h / 2;
+  const x2 = to.x + to.w / 2;
+  const y2 = to.y + to.h / 2;
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
+    stroke="${C.serve}" stroke-width="${LINE_W * 1.2}"
+    stroke-dasharray="${LINE_W * 6} ${LINE_W * 3}"
+    opacity="0.85" marker-end="url(#arrowhead)"/>`;
 }
 
 /** Animated shuttlecock bobbing above the serve box. */
 function renderShuttlecock(C: CourtColors, from: Box): string {
-  const cx = from.x + from.w / 2,
-    cy = from.y + from.h / 2 - 30;
-  const size = 30;
+  const size = Math.round(VB_H * 0.09);
+  const cx = from.x + from.w / 2;
+  const cy = from.y + from.h / 2 - size;
+  const bobAmp = Math.round(size * 0.4);
   return `
     <g transform="translate(${cx - size / 2}, ${cy - size / 2})">
       <animateTransform attributeName="transform" type="translate"
-        values="${cx - size / 2},${cy - size / 2}; ${cx - size / 2},${cy - size / 2 - 12}; ${cx - size / 2},${cy - size / 2}"
+        values="${cx - size / 2},${cy - size / 2}; ${cx - size / 2},${cy - size / 2 - bobAmp}; ${cx - size / 2},${cy - size / 2}"
         dur="1.2s" repeatCount="indefinite" calcMode="spline"
         keySplines="0.33 0 0.66 1; 0.33 0 0.66 1"/>
       <g transform="scale(${size / 120})">
@@ -264,41 +385,56 @@ function renderShuttlecock(C: CourtColors, from: Box): string {
 function renderScores(C: CourtColors, match: Match, L: number, R: number, dim: Dimensions): string {
   const { cw, midX, cy, sTop, sH } = dim;
 
-  // Dead zone on each side of the net — clicks here score for nobody.
-  // 60px each side gives a 120px total gap: wide enough that 2-digit scores
-  // (e.g. 29-29 at deuce) never trespass into the opposite half.
-  const netGap = 60;
+  // Short service line distance from net — used to set the dead zone proportionally
+  const shortDist = NET_TO_SHORT_SVC * SCALE_X;
 
-  // Center scores in the full outer half (PADDING↔midX-netGap and midX+netGap↔PADDING+cw)
-  // so they sit well away from the net regardless of how many digits are showing.
+  // Dead zone on each side of the net: 60% of the short service distance.
+  // Prevents 2-digit scores (e.g. 29-29 at deuce) from trespassing the net zone.
+  const netGap = Math.round(shortDist * 0.6);
+
+  // Center scores in the full outer half so they stay far from the net
+  // regardless of how many digits are displayed.
   const scoreLx = (PADDING + midX - netGap) / 2;
   const scoreRx = (midX + netGap + PADDING + cw) / 2;
 
-  // Shared text attributes to avoid repetition across the two score groups.
-  const scoreTextAttrs = `text-anchor="middle" font-size="72" font-weight="900" font-family="system-ui, sans-serif" style="pointer-events:none"`;
+  // Font size and animation peak scale with the canvas height
+  const fs = Math.round(VB_H * 0.22);
+  const fsPk = Math.round(VB_H * 0.28);
+
+  const attrs = `text-anchor="middle" font-size="${fs}" font-weight="900" font-family="system-ui, sans-serif" style="pointer-events:none"`;
+
+  const scoreY = cy + fs * 0.28; // vertically center the text on the court midline
 
   return `
     <g class="court__score-btn" data-player="${L}" style="cursor:pointer">
       <rect x="${PADDING}" y="${sTop}" width="${midX - PADDING - netGap}" height="${sH}" fill="transparent"/>
-      <text ${scoreTextAttrs} x="${scoreLx}" y="${cy + 20}" stroke="rgba(0,0,0,0.45)" stroke-width="10" stroke-linejoin="round" fill="none" paint-order="stroke">
+      <text ${attrs} x="${scoreLx}" y="${scoreY}"
+          stroke="rgba(0,0,0,0.45)" stroke-width="${LINE_W * 5}" stroke-linejoin="round"
+          fill="none" paint-order="stroke">
         ${match.scores[L]}
-        <animate attributeName="font-size" values="72;90;72" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
+        <animate attributeName="font-size" values="${fs};${fsPk};${fs}" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
       </text>
-      <text ${scoreTextAttrs} x="${scoreLx}" y="${cy + 20}" fill="${C.scoreText}" stroke="rgba(0,0,0,0.3)" stroke-width="4" stroke-linejoin="round" paint-order="stroke fill">
+      <text ${attrs} x="${scoreLx}" y="${scoreY}"
+          fill="${C.scoreText}" stroke="rgba(0,0,0,0.3)" stroke-width="${LINE_W * 2}" stroke-linejoin="round"
+          paint-order="stroke fill">
         ${match.scores[L]}
-        <animate attributeName="font-size" values="72;90;72" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
+        <animate attributeName="font-size" values="${fs};${fsPk};${fs}" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
         <animate attributeName="opacity" values="1;0.7;1" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
       </text>
     </g>
     <g class="court__score-btn" data-player="${R}" style="cursor:pointer">
       <rect x="${midX + netGap}" y="${sTop}" width="${PADDING + cw - midX - netGap}" height="${sH}" fill="transparent"/>
-      <text ${scoreTextAttrs} x="${scoreRx}" y="${cy + 20}" stroke="rgba(0,0,0,0.45)" stroke-width="10" stroke-linejoin="round" fill="none" paint-order="stroke">
+      <text ${attrs} x="${scoreRx}" y="${scoreY}"
+          stroke="rgba(0,0,0,0.45)" stroke-width="${LINE_W * 5}" stroke-linejoin="round"
+          fill="none" paint-order="stroke">
         ${match.scores[R]}
-        <animate attributeName="font-size" values="72;90;72" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
+        <animate attributeName="font-size" values="${fs};${fsPk};${fs}" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
       </text>
-      <text ${scoreTextAttrs} x="${scoreRx}" y="${cy + 20}" fill="${C.scoreText}" stroke="rgba(0,0,0,0.3)" stroke-width="4" stroke-linejoin="round" paint-order="stroke fill">
+      <text ${attrs} x="${scoreRx}" y="${scoreY}"
+          fill="${C.scoreText}" stroke="rgba(0,0,0,0.3)" stroke-width="${LINE_W * 2}" stroke-linejoin="round"
+          paint-order="stroke fill">
         ${match.scores[R]}
-        <animate attributeName="font-size" values="72;90;72" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
+        <animate attributeName="font-size" values="${fs};${fsPk};${fs}" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
         <animate attributeName="opacity" values="1;0.7;1" dur="0.35s" begin="indefinite" restart="always" class="court__score-anim"/>
       </text>
     </g>`;
