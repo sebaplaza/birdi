@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "test:e2e": "npx playwright test",
+    "test:e2e": "pnpm build && npx playwright test",
     "lint": "oxlint src/ tests/",
     "lint:fix": "oxlint --fix src/ tests/",
     "format": "oxfmt --write src/ tests/",

@@ -3,7 +3,7 @@ import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "./e2e",
   webServer: {
-    command: "npx vite --port 4173",
+    command: "npx vite preview --port 4173",
     port: 4173,
     reuseExistingServer: true,
   },
